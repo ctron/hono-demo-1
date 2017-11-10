@@ -14,7 +14,7 @@ RUN mkdir /build
 
 COPY . /build
 
-RUN cd build && mvn clean package -DskipTests
+RUN cd build && mvn -B clean package -DskipTests
 
 ## run shaded jar
 
