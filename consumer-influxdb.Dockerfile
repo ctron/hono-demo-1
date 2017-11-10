@@ -18,4 +18,4 @@ RUN cd build && mvn -B clean package -DskipTests
 
 ## run shaded jar
 
-ENTRYPOINT ["java", "-jar", "/build/value-consumer-influxdb/target/value-consumer-influxdb-app.jar"]
+ENTRYPOINT ["java", "-Dvertx.cacheDirBase=/tmp", "-jar", "/build/value-consumer-influxdb/target/value-consumer-influxdb-app.jar"]
