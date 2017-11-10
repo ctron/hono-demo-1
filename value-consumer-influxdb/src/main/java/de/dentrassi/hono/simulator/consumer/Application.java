@@ -100,7 +100,9 @@ public class Application {
         this.latch.await();
 
         if (consumerFuture.succeeded()) {
-            System.in.read();
+            while (true) {
+                Thread.sleep(Long.MAX_VALUE);
+            }
         }
         this.vertx.close();
 
