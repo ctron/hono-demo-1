@@ -1,0 +1,169 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: hono-demo-1-template
+  annotations:
+    description: "Eclipse Hono™ Demo #1"
+    iconClass: "pficon-virtual-machine"
+    tags: "iot"
+
+# Parameters
+
+parameters:
+- name:         GIT_BRANCH
+  description:     GitHub branch
+  value:           master
+
+objects:
+
+# Image streams
+
+- kind: ImageStream
+  apiVersion: v1
+  metadata:
+    name: hono-demo-1-consumer-influxdb
+
+- kind: ImageStream
+  apiVersion: v1
+  metadata:
+    name: hono-demo-1-dataset-simulator
+
+# Builds
+
+- kind: BuildConfig
+  apiVersion: v1
+  metadata:
+    name: hono-demo-1-consumer-influxdb-build
+  spec:
+    triggers: 
+      - type: ImageChange
+      - type: ConfigChange
+    source: 
+      type: Git
+      git:
+        uri: https://github.com/ctron/hono-demo-1
+        ref: ${GIT_BRANCH}
+    strategy: 
+      type: Docker
+      dockerStrategy:
+        dockerfilePath: consumer-influxdb.Dockerfile
+    postCommit:
+    output: 
+      to:
+        kind: ImageStreamTag
+        name: hono-demo-1-consumer-influxdb:latest
+
+- kind: BuildConfig
+  apiVersion: v1
+  metadata:
+    name: hono-demo-1-dataset-simulator-build
+  spec:
+    triggers: 
+      - type: ImageChange
+      - type: ConfigChange
+    source: 
+      type: Git
+      git:
+        uri: https://github.com/ctron/hono-demo-1
+        ref: ${GIT_BRANCH}
+    strategy: 
+      type: Docker
+      dockerStrategy:
+        dockerfilePath: dataset-simulator.Dockerfile
+    postCommit:
+    output: 
+      to:
+        kind: ImageStreamTag
+        name: hono-demo-1-dataset-simulator:latest
+
+# Deployment
+
+- kind: DeploymentConfig
+  apiVersion: v1
+  metadata:
+    name: hono-demo-1-consumer-influxdb
+  spec:
+    replicas: 1
+    selector:
+      app: hono-demo-1-consumer-influxdb
+      deploymentconfig: hono-demo-1-consumer-influxdb
+    strategy:
+      type: Recreate
+    triggers:
+      - type: ConfigChange 
+      - type: ImageChange 
+        imageChangeParams:
+          automatic: true
+          containerNames:
+            - consumer-influxdb
+          from:
+            kind: ImageStreamTag
+            name: hono-demo-1-consumer-influxdb:latest
+    template:
+      metadata:
+        labels:
+          app: hono-demo-1-consumer-influxdb
+          deploymentconfig: hono-demo-1-consumer-influxdb
+      spec:
+        containers:
+        - image: hono-demo-1-consumer-influxdb
+          imagePullPolicy: Always
+          name: consumer-influxdb
+          volumeMounts:
+            - name: secret-volume
+              mountPath: /etc/secret-volume
+              readOnly: true
+          env:
+            - name: HONO_USER
+              value: consumer@HONO
+            - name: HONO_PASSWORD
+              value: verysecret
+            - name: HONO_TENANT
+              value: DEFAULT_TENANT
+            - name: HONO_TRUSTED_CERTS
+              value: /etc/secret-volume/trusted-certs.pem
+            - name: INFLUXDB_USER
+              value: root
+            - name: INFLUXDB_PASSWORD
+              value: root
+            - name: INFLUXDB_NAME
+              value: kubecon
+        volumes:
+          - name: secret-volume
+            secret:
+              secretName: hono-dispatch-router-conf
+
+- kind: DeploymentConfig
+  apiVersion: v1
+  metadata:
+    name: hono-demo-1-dataset-simulator
+  spec:
+    replicas: 1
+    selector:
+      app: hono-demo-1-dataset-simulator
+      deploymentconfig: hono-demo-1-dataset-simulator
+    strategy:
+      type: Recreate
+    triggers:
+      - type: ConfigChange 
+      - type: ImageChange 
+        imageChangeParams:
+          automatic: true
+          containerNames:
+            - dataset-simulator
+          from:
+            kind: ImageStreamTag
+            name: hono-demo-1-dataset-simulator:latest
+    template:
+      metadata:
+        labels:
+          app: hono-demo-1-dataset-simulator
+          deploymentconfig: hono-demo-1-dataset-simulator
+      spec:
+        containers:
+        - image: hono-demo-1-dataset-simulator
+          imagePullPolicy: Always
+          name: dataset-simulator
+          env:
+            - name: DATASET_FILE
+              value: /build/src/dataset/Electricity_P.csv
