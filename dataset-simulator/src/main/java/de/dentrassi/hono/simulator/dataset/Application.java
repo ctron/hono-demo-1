@@ -25,6 +25,10 @@ public class Application {
         final String host = getenv("HONO_ADAPTER_MQTT_VERTX_SERVICE_HOST");
         final int port = Integer.parseInt(getenv("HONO_ADAPTER_MQTT_VERTX_SERVICE_PORT"));
 
+        System.out.format("Dataset: %s%n", datasetFile);
+        System.out.format("MQTT Host: %s%n", host);
+        System.out.format("MQTT Port: %s%n", port);
+
         try (final Flow flow = new Flow(new ClassLoaderComponentFactory(Application.class.getClassLoader()))) {
             flow.modify(context -> setup(context, datasetFile, host, port));
             flow.start();
