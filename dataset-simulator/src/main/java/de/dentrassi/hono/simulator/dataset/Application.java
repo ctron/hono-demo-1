@@ -11,6 +11,7 @@
 package de.dentrassi.hono.simulator.dataset;
 
 import static io.glutamate.util.Collections.map;
+import static java.lang.System.getenv;
 
 import de.dentrassi.flow.ComponentInstance;
 import de.dentrassi.flow.Flow;
@@ -20,8 +21,12 @@ import de.dentrassi.flow.spi.type.ClassLoaderComponentFactory;
 public class Application {
     public static void main(final String[] args) throws Exception {
 
+        final String datasetFile = getenv("DATASET_FILE");
+        final String host = getenv("HONO_ADAPTER_MQTT_VERTX_SERVICE_HOST");
+        final int port = Integer.parseInt(getenv("HONO_ADAPTER_MQTT_VERTX_SERVICE_PORT"));
+
         try (final Flow flow = new Flow(new ClassLoaderComponentFactory(Application.class.getClassLoader()))) {
-            flow.modify(context -> setup(context, args[0], args[1]));
+            flow.modify(context -> setup(context, datasetFile, host, port));
             flow.start();
             try {
                 Thread.sleep(Long.MAX_VALUE);
@@ -32,7 +37,7 @@ public class Application {
 
     }
 
-    public static void setup(final FlowContext context, final String file, final String host) {
+    public static void setup(final FlowContext context, final String file, final String host, final int port) {
 
         // csv time series
 
@@ -54,7 +59,7 @@ public class Application {
                     map.put("port", "1883");
                     */
                     map.put("host", host);
-                    map.put("port", "31883");
+                    map.put("port", /* "31883"*/ Integer.toString(port));
                     map.put("username", "sensor1@DEFAULT_TENANT");
                     map.put("password", "hono-secret");
                 }));
