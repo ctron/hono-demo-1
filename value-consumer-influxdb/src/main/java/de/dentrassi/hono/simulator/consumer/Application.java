@@ -53,8 +53,8 @@ public class Application {
     public Application(final String tenant, final String host, final int port, final String user, final String password,
             final Path trustedCerts) {
 
-        this.consumer = new InfluxDbConsumer(getenv("INFLUXDB_URL"), getenv("INFLUXDB_USER"),
-                getenv("INFLUXDB_PASSWORD"), getenv("INFLUXDB_NAME"));
+        this.consumer = new InfluxDbConsumer(makeInfluxDbUrl(), getenv("INFLUXDB_USER"), getenv("INFLUXDB_PASSWORD"),
+                getenv("INFLUXDB_NAME"));
 
         this.tenant = tenant;
 
@@ -67,6 +67,15 @@ public class Application {
 
         this.latch = new CountDownLatch(1);
 
+    }
+
+    private String makeInfluxDbUrl() {
+        final String url = getenv("INFLUXDB_URL");
+        if (url != null && !url.isEmpty()) {
+            return url;
+        }
+
+        return String.format("http://%s:%s", getenv("INFLUXDB_SERVICE_HOST"), getenv("INFLUXDB_SERVICE_PORT"));
     }
 
     private void consumeTelemetryData() throws Exception {
