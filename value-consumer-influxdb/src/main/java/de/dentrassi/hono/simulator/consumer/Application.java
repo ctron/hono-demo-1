@@ -75,7 +75,7 @@ public class Application {
             return url;
         }
 
-        return String.format("http://%s:%s", getenv("INFLUXDB_SERVICE_HOST"), getenv("INFLUXDB_PORT_8086_TCP_PORT"));
+        return String.format("http://%s:%s", getenv("INFLUXDB_SERVICE_HOST"), getenv("INFLUXDB_SERVICE_PORT_API"));
     }
 
     private void consumeTelemetryData() throws Exception {
