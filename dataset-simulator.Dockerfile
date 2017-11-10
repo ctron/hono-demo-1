@@ -19,4 +19,4 @@ RUN cd build && mvn -B clean package -DskipTests
 
 ## run shaded jar
 
-ENTRYPOINT ["java", "-jar", "/build/dataset-simulator/target/dataset-simulator-app.jar"]
+ENTRYPOINT ["java", "-Dvertx.cacheDirBase=/tmp", "-jar", "/build/dataset-simulator/target/dataset-simulator-app.jar"]
