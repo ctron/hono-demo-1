@@ -19,4 +19,5 @@
 <stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="de.dentrassi.hono.simulator.dataset.Application"/>
 <stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="dataset-simulator"/>
 <stringAttribute key="org.eclipse.jdt.launching.SOURCE_PATH_PROVIDER" value="org.eclipse.m2e.launchconfig.sourcepathProvider"/>
+<stringAttribute key="org.eclipse.jdt.launching.VM_ARGUMENTS" value="-Dvertx.logger-delegate-factory-class-name=io.vertx.core.logging.SLF4JLogDelegateFactory"/>
 </launchConfiguration>
