@@ -159,8 +159,6 @@ public class Application {
             @SuppressWarnings("resource")
             final Flow flow = new Flow(new ClassLoaderComponentFactory(Application.class.getClassLoader()));
 
-            Thread.sleep(1_000); // FIXME: remove with flow-core:0.0.2
-
             final int flowIdx = i;
 
             flow.modify(
@@ -194,7 +192,6 @@ public class Application {
                     map.put("timestampColumn", "UNIX_TS");
                     map.put("timestampUnit", "seconds");
                     map.put("durationDividedBy", "60");
-                    map.put("durationMultipliedBy", "1"); // FIXME: remove with flow-core:0.0.2
                 }));
 
         // open CSV when mqtt is connected

@@ -14,7 +14,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <flow.version>0.0.1</flow.version>
+        <flow.version>0.0.3</flow.version>
     </properties>
 
     <dependencies>
