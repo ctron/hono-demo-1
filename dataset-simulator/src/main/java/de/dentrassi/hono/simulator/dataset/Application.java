@@ -149,16 +149,27 @@ public class Application {
         System.out.format("MQTT Host: %s%n", host);
         System.out.format("MQTT Port: %s%n", port);
 
+        System.out.format("Number of instances (flows × producers) = total - %s × %s = %s%n", numberOfFlows,
+                numberOfPublishers, numberOfFlows * numberOfPublishers);
+
         for (int i = 0; i < numberOfFlows; i++) {
+
+            System.out.format("Starting flow #%s …%n", i);
+
             @SuppressWarnings("resource")
             final Flow flow = new Flow(new ClassLoaderComponentFactory(Application.class.getClassLoader()));
 
+            Thread.sleep(1_000); // FIXME: remove with flow-core:0.0.2
+
             final int flowIdx = i;
+
             flow.modify(
                     context -> wrap(() -> setup(deviceIdPrefix, flowIdx, numberOfPublishers, context, datasetFile, host,
                             port)));
             flow.start();
         }
+
+        System.out.println("Flows are running…");
 
         try {
             Thread.sleep(Long.MAX_VALUE);
@@ -171,6 +182,9 @@ public class Application {
     public static void setup(final String deviceIdPrefix, final int flowIdx, final int numberOfPublishers,
             final FlowContext context,
             final String file, final String host, final int port) throws Exception {
+
+        System.out.format("Setting up flow #%s - prefix: %s, publishers#: %s%n", flowIdx, deviceIdPrefix,
+                numberOfPublishers);
 
         // csv time series
 

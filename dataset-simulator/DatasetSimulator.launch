@@ -12,6 +12,8 @@
 <mapEntry key="HONO_ADAPTER_MQTT_VERTX_SERVICE_PORT" value="31883"/>
 <mapEntry key="HONO_SERVICE_DEVICE_REGISTRY_SERVICE_HOST" value="${minishift_ip}"/>
 <mapEntry key="HONO_SERVICE_DEVICE_REGISTRY_SERVICE_PORT_HTTP" value="31080"/>
+<mapEntry key="NUMBER_OF_FLOWS" value="5"/>
+<mapEntry key="NUMBER_OF_PUBLISHERS" value="5"/>
 </mapAttribute>
 <stringAttribute key="org.eclipse.jdt.launching.CLASSPATH_PROVIDER" value="org.eclipse.m2e.launchconfig.classpathProvider"/>
 <stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="de.dentrassi.hono.simulator.dataset.Application"/>
