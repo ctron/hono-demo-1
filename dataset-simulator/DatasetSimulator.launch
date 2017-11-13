@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="org.eclipse.jdt.launching.localJavaApplication">
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
+<listEntry value="/dataset-simulator/src/main/java/de/dentrassi/hono/simulator/dataset/Application.java"/>
+</listAttribute>
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
+<listEntry value="1"/>
+</listAttribute>
+<mapAttribute key="org.eclipse.debug.core.environmentVariables">
+<mapEntry key="DATASET_FILE" value="${project_loc:hono-demo-1}/src/dataset/Electricity_P.csv"/>
+<mapEntry key="HONO_ADAPTER_MQTT_VERTX_SERVICE_HOST" value="${minishift_ip}"/>
+<mapEntry key="HONO_ADAPTER_MQTT_VERTX_SERVICE_PORT" value="31883"/>
+<mapEntry key="HONO_SERVICE_DEVICE_REGISTRY_SERVICE_HOST" value="${minishift_ip}"/>
+<mapEntry key="HONO_SERVICE_DEVICE_REGISTRY_SERVICE_PORT_HTTP" value="31080"/>
+</mapAttribute>
+<stringAttribute key="org.eclipse.jdt.launching.CLASSPATH_PROVIDER" value="org.eclipse.m2e.launchconfig.classpathProvider"/>
+<stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="de.dentrassi.hono.simulator.dataset.Application"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="dataset-simulator"/>
+<stringAttribute key="org.eclipse.jdt.launching.SOURCE_PATH_PROVIDER" value="org.eclipse.m2e.launchconfig.sourcepathProvider"/>
+</launchConfiguration>
