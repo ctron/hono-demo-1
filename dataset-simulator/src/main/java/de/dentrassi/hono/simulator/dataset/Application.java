@@ -71,7 +71,10 @@ public class Application {
         context.connectTrigger(context.triggerOutInit(), mqttClient.port("connect"));
 
         // open CSV when mqtt is connected
+
         context.connectTrigger(mqttClient.port("connected"), csv.port("open"));
+
+        // map records to JSON
 
         final ComponentInstance mapBuilder = context.createComponent("de.dentrassi.flow.component.MapBuilder", null);
         final ComponentInstance toJson = context.createComponent("de.dentrassi.flow.component.json.AnyToJson", null);
@@ -84,14 +87,18 @@ public class Application {
                     map.put("qos", "0");
                 }));
 
+        // map MQTT client
+
         context.connectData(mqttClient.port("client"), mqttPublish.port("client"));
 
+        // when the CSV record is updated --> publish to MQTT
         context.connectTrigger(csv.port("updated"), mqttPublish.port("publish"));
         context.connectData(toJson.port("output"), mqttPublish.port("payload"));
 
         for (final String tag : new String[] { "WHE", "RSE", "GRE", "MHE", "B1E", "BME", "CWE", "DWE", "EQE", "FRE",
                 "HPE", "OFE", "UTE", "WOE", "B2E", "CDE", "DNE", "EBE", "FGE", "HTE", "OUE", "TVE", "UNE" }) {
 
+            // connect fields of map builder, creating the payload
             context.connectData(csv.port("record/" + tag), mapBuilder.port(tag));
 
         }
