@@ -34,6 +34,8 @@ public class InfluxDbConsumer {
     private static long last;
     private static AtomicLong counter = new AtomicLong();
 
+    private final int batchSize = Integer.parseInt(System.getenv().getOrDefault("INFLUXDB_BATCH_SIZE", "20"));
+
     public InfluxDbConsumer(final String uri, final String username, final String password,
             final String databaseaName) {
 
@@ -47,7 +49,7 @@ public class InfluxDbConsumer {
 
         this.db.setDatabase(databaseaName);
 
-        this.db.enableBatch(20, 1000, TimeUnit.MILLISECONDS);
+        this.db.enableBatch(this.batchSize, 1000, TimeUnit.MILLISECONDS);
 
         Executors.newSingleThreadScheduledExecutor()
                 .scheduleAtFixedRate(InfluxDbConsumer::updateStats, 1, 1, TimeUnit.SECONDS);
