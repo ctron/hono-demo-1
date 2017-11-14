@@ -11,7 +11,9 @@
 package de.dentrassi.hono.simulator.consumer;
 
 import java.util.Map;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.message.Message;
@@ -29,6 +31,9 @@ public class InfluxDbConsumer {
 
     private final InfluxDB db;
 
+    private static long last;
+    private static AtomicLong counter = new AtomicLong();
+
     public InfluxDbConsumer(final String uri, final String username, final String password,
             final String databaseaName) {
 
@@ -43,6 +48,17 @@ public class InfluxDbConsumer {
         this.db.setDatabase(databaseaName);
 
         this.db.enableBatch(20, 1000, TimeUnit.MILLISECONDS);
+
+        Executors.newSingleThreadScheduledExecutor()
+                .scheduleAtFixedRate(InfluxDbConsumer::updateStats, 1, 1, TimeUnit.SECONDS);
+    }
+
+    public static void updateStats() {
+        final long c = counter.get();
+
+        final long diff = c - last;
+        last = c;
+        System.out.format("Processed %s messages%n", diff);
     }
 
     public void consume(final Message msg, final String string) {
@@ -78,6 +94,8 @@ public class InfluxDbConsumer {
                 }
             }
         }
+
+        counter.incrementAndGet();
 
         this.db.write(p.build());
     }
