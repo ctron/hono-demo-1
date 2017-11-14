@@ -17,6 +17,9 @@ import static java.lang.System.getenv;
 import static java.util.Collections.singletonMap;
 import static java.util.Optional.ofNullable;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import de.dentrassi.flow.ComponentInstance;
 import de.dentrassi.flow.Flow;
 import de.dentrassi.flow.FlowContext;
@@ -30,6 +33,8 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class Application {
+
+    private static final Logger logger = LoggerFactory.getLogger(Application.class);
 
     private static final String TENANT_ID = "DEFAULT_TENANT";
 
@@ -59,11 +64,11 @@ public class Application {
                 .get()
                 .build()).execute()) {
 
-            System.out.println(getDevice.request().url());
+            logger.debug("Registration URL - get: {}", getDevice.request().url());
 
             if (getDevice.isSuccessful()) {
 
-                System.out.format("Device %s already registered%n", deviceId);
+                logger.debug("Device {} already registered", deviceId);
 
             } else {
 
@@ -74,14 +79,14 @@ public class Application {
                         .post(RequestBody.create(MT_JSON, encode(singletonMap("device-id", deviceId))))
                         .build()).execute()) {
 
-                    System.out.println(newDevice.request().url());
+                    logger.debug("Registration URL - post: {}", newDevice.request().url());
 
                     if (!newDevice.isSuccessful()) {
                         throw new RuntimeException(
                                 "Unable to register device: " + deviceId + " -> " + newDevice.code() + ": "
                                         + newDevice.message());
                     }
-                    System.out.format("Registered device: %s%n", deviceId);
+                    logger.info("Registered device: {}", deviceId);
                 }
             }
         }
@@ -96,10 +101,12 @@ public class Application {
                 .build())
                 .execute()) {
 
-            System.out.println(getCredentials.request().url());
+            logger.debug("Credentials URL - get: {}", getCredentials.request().url());
 
             if (getCredentials.isSuccessful()) {
-                System.out.format("User %s already registered%n", username);
+
+                logger.debug("User {} already registered", username);
+
             } else {
 
                 final AddCredentials add = new AddCredentials();
@@ -108,8 +115,6 @@ public class Application {
                 add.setType("hashed-password");
                 add.getSecrets().add(Secret.sha512(password));
 
-                System.out.println(encode(add));
-
                 try (final Response newUser = http.newCall(new Request.Builder()
                         .url(
                                 CREDENTIALS_URL
@@ -117,7 +122,7 @@ public class Application {
                         .post(RequestBody.create(MT_JSON, encode(add)))
                         .build()).execute()) {
 
-                    System.out.println(newUser.request().url());
+                    logger.debug("Credentials URL - get: {}", newUser.request().url());
 
                     if (!newUser.isSuccessful()) {
                         throw new RuntimeException(
@@ -125,7 +130,7 @@ public class Application {
                                         + newUser.message());
                     }
 
-                    System.out.format("Registered user: %s%n", deviceId);
+                    logger.info("Registered user {}", username);
 
                 }
             }
@@ -244,8 +249,21 @@ public class Application {
 
             context.connectData(mqttClient.port("client"), mqttPublish.port("client"));
 
-            // when the CSV record is updated --> publish to MQTT
-            context.connectTrigger(csv.port("updated"), mqttPublish.port("publish"));
+            // when the CSV record is updated --> publish to MQTT if the client is connected
+
+            final ComponentInstance permit = context.createComponent("de.dentrassi.flow.component.trigger.Permit",
+                    null);
+
+            // csv]updated --> input[permit]output --> publish[mqttPublish
+
+            context.connectTrigger(csv.port("updated"), permit.port("input"));
+            context.connectTrigger(permit.port("output"), mqttPublish.port("publish"));
+
+            // mqttClient]connected >-- permit[permit
+
+            context.connectData(mqttClient.port("connected"), permit.port("permit"));
+
+            // publish JSON payload
             context.connectData(toJson.port("output"), mqttPublish.port("payload"));
 
         }
