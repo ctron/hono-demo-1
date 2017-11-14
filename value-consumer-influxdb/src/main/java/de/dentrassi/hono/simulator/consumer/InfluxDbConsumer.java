@@ -40,6 +40,7 @@ public class InfluxDbConsumer {
             final String databaseaName) {
 
         logger.info("InfluxDB - URL: {}", uri);
+        logger.info("           batch size: {}", this.batchSize);
 
         this.db = InfluxDBFactory.connect(uri, username, password);
 
