@@ -16,6 +16,9 @@ import static java.util.Optional.ofNullable;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Data;
@@ -43,7 +46,27 @@ public class Application {
     private final String tenant;
     private final InfluxDbConsumer consumer;
 
+    private static long last;
+    private static AtomicLong counter = new AtomicLong();
+
+    private static final boolean PERSISTENCE_ENABLED = Optional
+            .ofNullable(System.getenv("ENABLE_PERSISTENCE"))
+            .map(Boolean::parseBoolean)
+            .orElse(true);
+
+    public static void updateStats() {
+        final long c = counter.get();
+
+        final long diff = c - last;
+        last = c;
+        System.out.format("Processed %s messages%n", diff);
+    }
+
     public static void main(final String[] args) throws Exception {
+
+        Executors.newSingleThreadScheduledExecutor()
+                .scheduleAtFixedRate(Application::updateStats, 1, 1, TimeUnit.SECONDS);
+
         final Application app = new Application(
                 getenv("HONO_TENANT"),
                 getenv("MESSAGING_SERVICE_HOST"), // HONO_DISPATCH_ROUTER_EXT_SERVICE_HOST 
@@ -51,6 +74,7 @@ public class Application {
                 getenv("HONO_USER"),
                 getenv("HONO_PASSWORD"),
                 ofNullable(getenv("HONO_TRUSTED_CERTS")));
+
         app.consumeTelemetryData();
 
     }
@@ -121,6 +145,16 @@ public class Application {
     private void handleTelemetryMessage(final Message msg) {
         // System.out.println(msg);
 
+        counter.incrementAndGet();
+
+        final String body = bodyAsString(msg);
+        if (PERSISTENCE_ENABLED) {
+            this.consumer.consume(msg, body);
+        }
+    }
+
+    private String bodyAsString(final Message msg) {
+
         final Section body = msg.getBody();
 
         if (body instanceof AmqpValue) {
@@ -129,23 +163,23 @@ public class Application {
 
             if (value == null) {
                 logger.info("Missing body value");
-                return;
+                return null;
             }
 
             if (value instanceof String) {
-                this.consumer.consume(msg, (String) value);
+                return (String) value;
             } else if (value instanceof byte[]) {
-                this.consumer.consume(msg, new String((byte[]) value, StandardCharsets.UTF_8));
+                return new String((byte[]) value, StandardCharsets.UTF_8);
             } else {
                 logger.info("Unsupported body type: {}", value.getClass());
+                return null;
             }
         } else if (body instanceof Data) {
-            final String s = StandardCharsets.UTF_8.decode(((Data) body).getValue().asByteBuffer()).toString();
-            this.consumer.consume(msg, s);
+            return StandardCharsets.UTF_8.decode(((Data) body).getValue().asByteBuffer()).toString();
         } else {
             logger.info("Unsupported body type: {}", body.getClass());
+            return null;
         }
-
     }
 
 }
