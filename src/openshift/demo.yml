@@ -120,8 +120,8 @@ objects:
               value: verysecret
             - name: HONO_TENANT
               value: DEFAULT_TENANT
-            - name: HONO_TRUSTED_CERTS
-              value: /etc/secret-volume/trusted-certs.pem
+#            - name: HONO_TRUSTED_CERTS
+#              value: /etc/secret-volume/trusted-certs.pem
             - name: INFLUXDB_USER
               value: root
             - name: INFLUXDB_PASSWORD
