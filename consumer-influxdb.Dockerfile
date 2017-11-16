@@ -4,11 +4,14 @@ MAINTAINER Jens Reimann <jreimann@redhat.com>
 LABEL maintainer "Jens Reimann <jreimann@redhat.com>"
 
 RUN yum update -y
-RUN yum install -y maven iproute
+RUN yum install -y maven iproute git
 
 # prepare build
 
 RUN mkdir /build
+
+RUN git clone https://github.com/ctron/hono -b feature/fix_settlement_1
+RUN cd hono && mvn clean install
 
 # start building
 
