@@ -43,8 +43,11 @@ public class Application {
     private final InfluxDbConsumer consumer;
 
     public static void main(final String[] args) throws Exception {
-        final Application app = new Application(getenv("HONO_TENANT"), getenv("HONO_DISPATCH_ROUTER_EXT_SERVICE_HOST"),
-                Integer.parseInt(getenv("HONO_DISPATCH_ROUTER_EXT_SERVICE_PORT")), getenv("HONO_USER"),
+        final Application app = new Application(
+                getenv("HONO_TENANT"),
+                getenv("MESSAGING_SERVICE_HOST"), // HONO_DISPATCH_ROUTER_EXT_SERVICE_HOST 
+                Integer.parseInt(getenv("MESSAGING_SERVICE_PORT_AMQP")), // HONO_DISPATCH_ROUTER_EXT_SERVICE_PORT
+                getenv("HONO_USER"),
                 getenv("HONO_PASSWORD"), Paths.get(getenv("HONO_TRUSTED_CERTS")));
         app.consumeTelemetryData();
 
