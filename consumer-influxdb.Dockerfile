@@ -11,7 +11,7 @@ RUN yum install -y maven iproute git
 RUN mkdir /build
 
 RUN git clone https://github.com/ctron/hono -b feature/fix_settlement_1
-RUN cd hono && mvn clean install
+RUN cd hono && mvn -B clean install -DskipTests
 
 # start building
 
