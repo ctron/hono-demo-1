@@ -147,9 +147,11 @@ public class Application {
 
         counter.incrementAndGet();
 
-        final String body = bodyAsString(msg);
         if (PERSISTENCE_ENABLED) {
-            this.consumer.consume(msg, body);
+            final String body = bodyAsString(msg);
+            if (this.consumer != null) {
+                this.consumer.consume(msg, body);
+            }
         }
     }
 
