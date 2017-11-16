@@ -11,10 +11,10 @@
 package de.dentrassi.hono.simulator.consumer;
 
 import static java.lang.System.getenv;
+import static java.util.Optional.ofNullable;
 
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
@@ -25,6 +25,7 @@ import org.eclipse.hono.client.HonoClient;
 import org.eclipse.hono.client.MessageConsumer;
 import org.eclipse.hono.client.impl.HonoClientImpl;
 import org.eclipse.hono.connection.ConnectionFactoryImpl;
+import org.eclipse.hono.connection.ConnectionFactoryImpl.ConnectionFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,13 +49,14 @@ public class Application {
                 getenv("MESSAGING_SERVICE_HOST"), // HONO_DISPATCH_ROUTER_EXT_SERVICE_HOST 
                 Integer.parseInt(getenv("MESSAGING_SERVICE_PORT_AMQP")), // HONO_DISPATCH_ROUTER_EXT_SERVICE_PORT
                 getenv("HONO_USER"),
-                getenv("HONO_PASSWORD"), Paths.get(getenv("HONO_TRUSTED_CERTS")));
+                getenv("HONO_PASSWORD"),
+                ofNullable(getenv("HONO_TRUSTED_CERTS")));
         app.consumeTelemetryData();
 
     }
 
     public Application(final String tenant, final String host, final int port, final String user, final String password,
-            final Path trustedCerts) {
+            final Optional<String> trustedCerts) {
 
         this.consumer = new InfluxDbConsumer(makeInfluxDbUrl(), getenv("INFLUXDB_USER"), getenv("INFLUXDB_PASSWORD"),
                 getenv("INFLUXDB_NAME"));
@@ -63,10 +65,15 @@ public class Application {
 
         this.vertx = Vertx.vertx();
 
-        this.honoClient = new HonoClientImpl(this.vertx,
-                ConnectionFactoryImpl.ConnectionFactoryBuilder.newBuilder().vertx(this.vertx).host(host).port(port)
-                        .user(user).password(password).trustStorePath(trustedCerts.toString())
-                        .disableHostnameVerification().build());
+        final ConnectionFactoryBuilder builder = ConnectionFactoryImpl.ConnectionFactoryBuilder.newBuilder()
+                .vertx(this.vertx).host(host).port(port)
+                .user(user)
+                .password(password)
+                .disableHostnameVerification();
+
+        trustedCerts.ifPresent(builder::trustStorePath);
+
+        this.honoClient = new HonoClientImpl(this.vertx, builder.build());
 
         this.latch = new CountDownLatch(1);
 

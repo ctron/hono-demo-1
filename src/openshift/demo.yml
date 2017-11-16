@@ -109,10 +109,10 @@ objects:
         - image: hono-demo-1-consumer-influxdb
           imagePullPolicy: Always
           name: consumer-influxdb
-          volumeMounts:
-            - name: secret-volume
-              mountPath: /etc/secret-volume
-              readOnly: true
+#          volumeMounts:
+#            - name: secret-volume
+#              mountPath: /etc/secret-volume
+#              readOnly: true
           env:
             - name: HONO_USER
               value: consumer@HONO
@@ -128,10 +128,10 @@ objects:
               value: root
             - name: INFLUXDB_NAME
               value: kubecon
-        volumes:
-          - name: secret-volume
-            secret:
-              secretName: hono-dispatch-router-conf
+#        volumes:
+#          - name: secret-volume
+#            secret:
+#              secretName: hono-dispatch-router-conf
 
 - kind: DeploymentConfig
   apiVersion: v1
