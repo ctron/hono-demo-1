@@ -1,4 +1,4 @@
-FROM hono-demo-base:latest
+FROM hono-demo-1-base:latest
 
 # start building
 
