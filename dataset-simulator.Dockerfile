@@ -5,6 +5,7 @@ FROM hono-demo-1-base:latest
 COPY . /build
 
 RUN xz -fd /build/src/dataset/Electricity_P.csv.xz
+RUN scl enable rh-maven33 "cd build && mvn -B clean package -DskipTests"
 
 ## run shaded jar
 

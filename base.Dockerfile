@@ -10,11 +10,11 @@ RUN yum install -y rh-maven33 iproute git
 # build hono M11 before
 
 RUN git clone https://github.com/ctron/hono -b feature/fix_settlement_1
-RUN . /opt/rh/rh-maven33/enable && cd hono && mvn -B clean install -DskipTests
+RUN scl enable rh-maven33 "cd hono && mvn -B clean install -DskipTests"
 
 # build vertx mqtt 3.5.1-SNAPSHOT
 
-RUN . /opt/rh/rh-maven33/enable && git clone https://github.com/ctron/vertx-mqtt -b feature/fix_missing_callback_1 && cd vertx-mqtt && mvn clean install -B -DskipTests
+RUN scl enable rh-maven33 "git clone https://github.com/ctron/vertx-mqtt -b feature/fix_missing_callback_1 && cd vertx-mqtt && mvn clean install -B -DskipTests"
 
 # prepare build
 

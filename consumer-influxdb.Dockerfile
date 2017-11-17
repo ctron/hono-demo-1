@@ -4,7 +4,7 @@ FROM hono-demo-1-base:latest
 
 COPY . /build
 
-RUN . /opt/rh/rh-maven33/enable && cd build && mvn -B clean package -DskipTests
+RUN scl enable rh-maven33 "cd build && mvn -B clean package -DskipTests"
 
 ## run shaded jar
 
