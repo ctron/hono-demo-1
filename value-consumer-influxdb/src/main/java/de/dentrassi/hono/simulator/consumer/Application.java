@@ -82,8 +82,14 @@ public class Application {
     public Application(final String tenant, final String host, final int port, final String user, final String password,
             final Optional<String> trustedCerts) {
 
-        this.consumer = new InfluxDbConsumer(makeInfluxDbUrl(), getenv("INFLUXDB_USER"), getenv("INFLUXDB_PASSWORD"),
-                getenv("INFLUXDB_NAME"));
+        if (PERSISTENCE_ENABLED) {
+            this.consumer = new InfluxDbConsumer(makeInfluxDbUrl(),
+                    getenv("INFLUXDB_USER"),
+                    getenv("INFLUXDB_PASSWORD"),
+                    getenv("INFLUXDB_NAME"));
+        } else {
+            this.consumer = null;
+        }
 
         this.tenant = tenant;
 
@@ -147,9 +153,9 @@ public class Application {
 
         counter.incrementAndGet();
 
-        if (PERSISTENCE_ENABLED) {
+        if (this.consumer != null) {
             final String body = bodyAsString(msg);
-            if (this.consumer != null) {
+            if (body != null) {
                 this.consumer.consume(msg, body);
             }
         }
