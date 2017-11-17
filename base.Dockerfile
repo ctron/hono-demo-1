@@ -19,3 +19,11 @@ RUN scl enable rh-maven33 "git clone https://github.com/ctron/vertx-mqtt -b feat
 # prepare build
 
 RUN mkdir /build
+
+# start building
+
+COPY . /build
+
+RUN xz -fd /build/src/dataset/Electricity_P.csv.xz
+RUN scl enable rh-maven33 "cd build && mvn -B clean package -DskipTests"
+
