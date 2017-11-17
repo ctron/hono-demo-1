@@ -74,6 +74,9 @@ objects:
     strategy: 
       type: Docker
       dockerStrategy:
+        from:
+          kind: ImageStreamTag
+          name: hono-demo-1-base:latest
         dockerfilePath: consumer-influxdb.Dockerfile
     postCommit:
     output: 
@@ -97,6 +100,9 @@ objects:
     strategy: 
       type: Docker
       dockerStrategy:
+        from:
+          kind: ImageStreamTag
+          name: hono-demo-1-base:latest
         dockerfilePath: dataset-simulator.Dockerfile
     postCommit:
     output: 
