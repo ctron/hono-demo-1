@@ -3,7 +3,7 @@
 ### Create a Minishift instance
 
 ~~~sh
-minishift start --cpus 4 --memory 16GB --metrics
+minishift start --cpus 4 --memory 16GB --metrics --disk-size 40GB
 ~~~
 
 ### Install EnMasse
