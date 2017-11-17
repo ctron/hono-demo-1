@@ -21,6 +21,11 @@ objects:
 - kind: ImageStream
   apiVersion: v1
   metadata:
+    name: hono-demo-1-base
+
+- kind: ImageStream
+  apiVersion: v1
+  metadata:
     name: hono-demo-1-consumer-influxdb
 
 - kind: ImageStream
@@ -29,6 +34,29 @@ objects:
     name: hono-demo-1-dataset-simulator
 
 # Builds
+
+- kind: BuildConfig
+  apiVersion: v1
+  metadata:
+    name: hono-demo-1-base-build
+  spec:
+    triggers: 
+      - type: ImageChange
+      - type: ConfigChange
+    source: 
+      type: Git
+      git:
+        uri: https://github.com/ctron/hono-demo-1
+        ref: ${GIT_BRANCH}
+    strategy: 
+      type: Docker
+      dockerStrategy:
+        dockerfilePath: base.Dockerfile
+    postCommit:
+    output: 
+      to:
+        kind: ImageStreamTag
+        name: hono-demo-1-base:latest
 
 - kind: BuildConfig
   apiVersion: v1
