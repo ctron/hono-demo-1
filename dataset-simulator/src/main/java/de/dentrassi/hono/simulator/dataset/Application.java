@@ -146,7 +146,8 @@ public class Application {
         final String host = getenv("HONO_ADAPTER_MQTT_VERTX_SERVICE_HOST");
         final int port = Integer.parseInt(getenv("HONO_ADAPTER_MQTT_VERTX_SERVICE_PORT"));
 
-        final String deviceIdPrefix = getenv().getOrDefault("DEVICE_ID_PREFIX", "device");
+        final String deviceIdPrefix = getenv().getOrDefault("DEVICE_ID_PREFIX",
+                getenv().getOrDefault("HOSTNAME", "device"));
         final int numberOfPublishers = ofNullable(getenv("NUMBER_OF_PUBLISHERS")).map(Integer::parseInt).orElse(1);
         final int numberOfFlows = ofNullable(getenv("NUMBER_OF_FLOWS")).map(Integer::parseInt).orElse(1);
 
