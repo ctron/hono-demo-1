@@ -16,6 +16,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class Application {
     public static void main(final String[] args) {
+        System.out.format("PN_TRACE_FRM = %s%n", System.getenv("PN_TRACE_FRM"));
         SpringApplication.run(Application.class, args);
     }
 }
