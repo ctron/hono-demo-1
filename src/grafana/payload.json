@@ -207,7 +207,7 @@
         "current": {},
         "datasource": "${DS_PAYLOAD}",
         "hide": 0,
-        "includeAll": false,
+        "includeAll": true,
         "label": null,
         "multi": false,
         "name": "device_id",
@@ -255,5 +255,5 @@
   },
   "timezone": "browser",
   "title": "AMPds2",
-  "version": 17
+  "version": 1
 }
