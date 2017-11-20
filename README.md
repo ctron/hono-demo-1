@@ -35,3 +35,13 @@ Deploy the OpenShift part: [src/openshift/README.md](src/openshift/README.md).
 ### Deploy Grafana setup
 
 Apply the Grafana configuration: [src/grafana/README.md](src/grafana/README.md).
+
+### Run locally
+
+Extract the certificate:
+
+~~~sh
+mkdir target/certs/
+oc extract -n hono secret/external-certs-messaging --to=target/certs/
+./convert-to-jks.sh
+~~~
