@@ -25,7 +25,7 @@ cd hono
 mvn clean install -Pbuild-docker-image -DskipTests
 cd example/target/deploy/openshift
 chmod a+x *.sh
-./enmasse_deploy.sh
+./openshift_deploy.sh
 ~~~
 
 ### Deploy the demo
