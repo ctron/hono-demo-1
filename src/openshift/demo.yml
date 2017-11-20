@@ -167,15 +167,16 @@ objects:
 #            secret:
 #              secretName: hono-dispatch-router-conf
 
-- kind: DeploymentConfig
-  apiVersion: v1
+- kind: StatefulSet
+  apiVersion: apps/v1beta1
   metadata:
     name: hono-demo-1-dataset-simulator
   spec:
-    replicas: 1
+    replicas: 2
+    serviceName: hono-demo-1-dataset-simulator
     selector:
-      app: hono-demo-1-dataset-simulator
-      deploymentconfig: hono-demo-1-dataset-simulator
+      matchLabels:
+        app: hono-demo-1-dataset-simulator
     strategy:
       type: Recreate
     triggers:
@@ -192,12 +193,41 @@ objects:
       metadata:
         labels:
           app: hono-demo-1-dataset-simulator
-          deploymentconfig: hono-demo-1-dataset-simulator
       spec:
         containers:
-        - image: hono-demo-1-dataset-simulator
+        - image: docker-registry.default.svc.cluster.local:5000/hono/hono-demo-1-dataset-simulator:latest
           imagePullPolicy: Always
           name: dataset-simulator
           env:
             - name: DATASET_FILE
               value: /build/src/dataset/Electricity_P.csv
+
+# Open node port
+
+- kind: Service
+  apiVersion: v1
+  metadata:
+    name: router
+    labels:
+      app: enmasse
+  spec:
+    type: NodePort
+    ports:
+    - port: 5672
+      nodePort: 32672
+    selector:
+      name: qrouterd
+
+- kind: Service
+  apiVersion: v1
+  metadata:
+    name: router-tls
+    labels:
+      app: enmasse
+  spec:
+    type: NodePort
+    ports:
+    - port: 5671
+      nodePort: 32671
+    selector:
+      name: qrouterd
