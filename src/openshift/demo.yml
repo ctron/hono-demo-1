@@ -167,16 +167,15 @@ objects:
 #            secret:
 #              secretName: hono-dispatch-router-conf
 
-- kind: StatefulSet
-  apiVersion: apps/v1beta1
+- kind: DeploymentConfig
+  apiVersion: v1
   metadata:
     name: hono-demo-1-dataset-simulator
   spec:
-    replicas: 2
-    serviceName: hono-demo-1-dataset-simulator
+    replicas: 1
     selector:
-      matchLabels:
-        app: hono-demo-1-dataset-simulator
+      app: hono-demo-1-dataset-simulator
+      deploymentconfig: hono-demo-1-dataset-simulator
     strategy:
       type: Recreate
     triggers:
@@ -193,9 +192,10 @@ objects:
       metadata:
         labels:
           app: hono-demo-1-dataset-simulator
+          deploymentconfig: hono-demo-1-dataset-simulator
       spec:
         containers:
-        - image: docker-registry.default.svc.cluster.local:5000/hono/hono-demo-1-dataset-simulator:latest
+        - image: hono-demo-1-dataset-simulator
           imagePullPolicy: Always
           name: dataset-simulator
           env:
