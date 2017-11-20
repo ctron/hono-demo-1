@@ -201,6 +201,10 @@ objects:
           env:
             - name: DATASET_FILE
               value: /build/src/dataset/Electricity_P.csv
+            - name: NUMBER_OF_FLOWS
+              value: 1
+            - name: NUMBER_OF_PUBLISHERS
+              value: 1
 
 # Open node port
 
