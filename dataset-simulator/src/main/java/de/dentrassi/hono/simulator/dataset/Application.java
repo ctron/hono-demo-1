@@ -72,6 +72,8 @@ public class Application {
 
             } else {
 
+                logger.debug("Failed to retrieve registration: {} {}", getDevice.code(), getDevice.message());
+
                 try (final Response newDevice = http.newCall(new Request.Builder()
                         .url(
                                 REGISTRATION_URL
