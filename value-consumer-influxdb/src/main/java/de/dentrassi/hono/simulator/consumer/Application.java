@@ -82,6 +82,8 @@ public class Application {
     public Application(final String tenant, final String host, final int port, final String user, final String password,
             final Optional<String> trustedCerts) {
 
+        System.out.format("Hono Consumer - Server: %s:%s%n", host, port);
+
         if (PERSISTENCE_ENABLED) {
             this.consumer = new InfluxDbConsumer(makeInfluxDbUrl(),
                     getenv("INFLUXDB_USER"),
@@ -123,7 +125,10 @@ public class Application {
 
         consumerFuture.setHandler(result -> {
             if (!result.succeeded()) {
-                System.err.println("honoClient could not create telemetry consumer : " + result.cause());
+                System.err.println("honoClient could not create telemetry consumer : ");
+                result.cause().printStackTrace();
+            } else {
+                System.out.println("Listening to telemetry …");
             }
             this.latch.countDown();
         });
