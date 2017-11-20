@@ -16,6 +16,10 @@ RUN scl enable rh-maven33 "cd hono && mvn -B clean install -DskipTests"
 
 RUN scl enable rh-maven33 "git clone https://github.com/ctron/vertx-mqtt -b feature/fix_missing_callback_1 && cd vertx-mqtt && mvn clean install -B -DskipTests"
 
+# build flow 0.0.5-SNAPSHOT
+
+RUN scl enable rh-maven33 "git clone https://github.com/ctron/flow && cd flow && git checkout 4d323eb6a6aaf62977e1c1eee3fd40acfef2810f && mvn clean install -B -DskipTests"
+
 # prepare build
 
 RUN mkdir /build
