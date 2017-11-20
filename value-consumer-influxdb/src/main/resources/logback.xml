@@ -8,7 +8,9 @@
         </encoder>
     </appender>
 
+    <!-- 
     <logger name="org.eclipse.hono.client.impl.AbstractConsumer" level="TRACE"/>
+    -->
 
     <root level="INFO">
         <appender-ref ref="STDOUT" />
