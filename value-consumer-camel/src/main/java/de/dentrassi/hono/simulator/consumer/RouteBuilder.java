@@ -19,13 +19,14 @@ public class RouteBuilder extends org.apache.camel.builder.RouteBuilder {
 
     @Override
     public void configure() throws Exception {
-        from("amqp:topic:telemetry/DEFAULT_TENANT").to("stream:out");
+        from("amqp:telemetry/DEFAULT_TENANT").to("stream:out");
     }
 
     @Bean
     public AMQPConnectionDetails amqpConnection() {
-        final AMQPConnectionDetails details = new AMQPConnectionDetails("amqp://192.168.42.43:30671", "consumer@HONO",
-                "verysecret");
+        final AMQPConnectionDetails details = new AMQPConnectionDetails(
+                "amqps://messaging-hono.192.168.42.137.nip.io:443?transport.verifyHost=false&transport.trustStoreLocation=/home/jreimann/Development/workspace-flow/hono-demo-1/hono.jks&transport.storeType=JKS&transport.keyStorePassword=123456&jms.topicPrefix=",
+                "consumer@HONO", "verysecret");
         return details;
     }
 
