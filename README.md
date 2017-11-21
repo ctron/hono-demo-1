@@ -19,7 +19,13 @@ cd enmasse-0.13.2
 ### Install Eclipse Hono
 
 ~~~sh
-git clone https://github.com/eclipse/hono
+
+# git clone https://github.com/eclipse/hono.git
+
+# use Dejan's PR for now
+
+git clone https://github.com/dejanb/hono.git -b enmasse
+
 eval $(minishift docker-env)
 cd hono
 mvn clean install -Pbuild-docker-image -DskipTests
