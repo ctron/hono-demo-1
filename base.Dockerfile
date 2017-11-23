@@ -15,7 +15,7 @@ RUN scl enable rh-maven33 "cd hono && git log -1 && mvn -B clean install -DskipT
 
 # build vertx mqtt 3.5.1-SNAPSHOT
 
-RUN scl enable rh-maven33 "git clone https://github.com/eclipse/vertx-mqtt && cd vertx-mqtt && git log -1 && mvn clean install -B -DskipTests"
+RUN scl enable rh-maven33 "git clone https://github.com/vertx/vertx-mqtt && cd vertx-mqtt && git log -1 && mvn clean install -B -DskipTests"
 
 # prepare build
 
