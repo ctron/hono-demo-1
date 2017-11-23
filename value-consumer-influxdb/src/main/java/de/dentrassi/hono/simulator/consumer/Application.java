@@ -14,6 +14,7 @@ import static java.lang.System.getenv;
 import static java.util.Optional.ofNullable;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -44,28 +45,24 @@ public class Application {
     private final HonoClientImpl honoClient;
     private final CountDownLatch latch;
     private final String tenant;
-    private final InfluxDbConsumer consumer;
 
-    private static long last;
-    private static AtomicLong counter = new AtomicLong();
+    private final InfluxDbConsumer consumer;
+    private final InfluxDbMetrics metrics;
+
+    private long last;
+    private final AtomicLong counter = new AtomicLong();
 
     private static final boolean PERSISTENCE_ENABLED = Optional
             .ofNullable(System.getenv("ENABLE_PERSISTENCE"))
             .map(Boolean::parseBoolean)
             .orElse(true);
 
-    public static void updateStats() {
-        final long c = counter.get();
-
-        final long diff = c - last;
-        last = c;
-        System.out.format("Processed %s messages%n", diff);
-    }
+    private static final boolean METRICS_ENABLED = Optional
+            .ofNullable(System.getenv("ENABLE_METRICS"))
+            .map(Boolean::parseBoolean)
+            .orElse(true);
 
     public static void main(final String[] args) throws Exception {
-
-        Executors.newSingleThreadScheduledExecutor()
-                .scheduleAtFixedRate(Application::updateStats, 1, 1, TimeUnit.SECONDS);
 
         final Application app = new Application(
                 getenv("HONO_TENANT"),
@@ -76,7 +73,6 @@ public class Application {
                 ofNullable(getenv("HONO_TRUSTED_CERTS")));
 
         app.consumeTelemetryData();
-
     }
 
     public Application(final String tenant, final String host, final int port, final String user, final String password,
@@ -92,6 +88,18 @@ public class Application {
         } else {
             this.consumer = null;
         }
+
+        if (METRICS_ENABLED) {
+            this.metrics = new InfluxDbMetrics(makeInfluxDbUrl(),
+                    getenv("INFLUXDB_USER"),
+                    getenv("INFLUXDB_PASSWORD"),
+                    getenv("INFLUXDB_NAME"));
+        } else {
+            this.metrics = null;
+        }
+
+        Executors.newSingleThreadScheduledExecutor()
+                .scheduleAtFixedRate(this::updateStats, 1, 1, TimeUnit.SECONDS);
 
         this.tenant = tenant;
 
@@ -109,6 +117,21 @@ public class Application {
 
         this.latch = new CountDownLatch(1);
 
+    }
+
+    public void updateStats() {
+        final long c = this.counter.get();
+
+        final long diff = c - this.last;
+        this.last = c;
+
+        final Instant now = Instant.now();
+
+        System.out.format("%s: Processed %s messages%n", now, diff);
+
+        if (this.metrics != null) {
+            this.metrics.updateStats(now, diff);
+        }
     }
 
     private String makeInfluxDbUrl() {
@@ -154,9 +177,7 @@ public class Application {
     }
 
     private void handleTelemetryMessage(final Message msg) {
-        // System.out.println(msg);
-
-        counter.incrementAndGet();
+        this.counter.incrementAndGet();
 
         if (this.consumer != null) {
             final String body = bodyAsString(msg);
