@@ -10,6 +10,7 @@
  *******************************************************************************/
 package de.dentrassi.hono.simulator.dataset;
 
+import static de.dentrassi.flow.model.DotRenderer.newRenderer;
 import static io.glutamate.lang.Exceptions.wrap;
 import static io.glutamate.util.Collections.map;
 import static io.vertx.core.json.Json.encode;
@@ -17,12 +18,16 @@ import static java.lang.System.getenv;
 import static java.util.Collections.singletonMap;
 import static java.util.Optional.ofNullable;
 
+import java.nio.file.Paths;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.dentrassi.flow.ComponentInstance;
 import de.dentrassi.flow.Flow;
 import de.dentrassi.flow.FlowContext;
+import de.dentrassi.flow.event.ListenerHandle;
+import de.dentrassi.flow.model.ModelListener;
 import de.dentrassi.flow.spi.type.ClassLoaderComponentFactory;
 import de.dentrassi.hono.simulator.dataset.AddCredentials.Secret;
 import okhttp3.HttpUrl;
@@ -41,13 +46,15 @@ public class Application {
     private static final String REGISTRATION_HOST = getenv("HONO_SERVICE_DEVICE_REGISTRY_SERVICE_HOST");
     private static final String REGISTRATION_PORT = getenv("HONO_SERVICE_DEVICE_REGISTRY_SERVICE_PORT_HTTP");
 
-    private static final HttpUrl REGISTRATION_URL = HttpUrl
-            .parse(String.format("http://%s:%s", REGISTRATION_HOST, REGISTRATION_PORT))
-            .resolve("/registration/");
+    private static final HttpUrl REGISTRATION_URL = REGISTRATION_HOST == null ? null
+            : HttpUrl
+                    .parse(String.format("http://%s:%s", REGISTRATION_HOST, REGISTRATION_PORT))
+                    .resolve("/registration/");
 
-    private static final HttpUrl CREDENTIALS_URL = HttpUrl
-            .parse(String.format("http://%s:%s", REGISTRATION_HOST, REGISTRATION_PORT))
-            .resolve("/credentials/");
+    private static final HttpUrl CREDENTIALS_URL = REGISTRATION_HOST == null ? null
+            : HttpUrl
+                    .parse(String.format("http://%s:%s", REGISTRATION_HOST, REGISTRATION_PORT))
+                    .resolve("/credentials/");
 
     private static final MediaType MT_JSON = MediaType.parse("application/json");
 
@@ -140,6 +147,10 @@ public class Application {
 
     }
 
+    private static boolean shouldRegister() {
+        return REGISTRATION_HOST != null;
+    }
+
     public static void main(final String[] args) throws Exception {
 
         http = new OkHttpClient.Builder().build();
@@ -173,6 +184,18 @@ public class Application {
                     context -> wrap(() -> setup(deviceIdPrefix, flowIdx, numberOfPublishers, context, datasetFile, host,
                             port)));
             flow.start();
+
+            if (i == 0) {
+
+                final ModelListener model = new ModelListener();
+                try (ListenerHandle listener = flow.registerListener(true, model)) {
+                    listener.initialized().get();
+                }
+
+                newRenderer()
+                        .render(model.getFlow(), Paths.get("model.dot"));
+
+            }
         }
 
         System.out.println("Flows are running…");
@@ -230,7 +253,9 @@ public class Application {
             final String username = String.format("user-%s-%s-%s", deviceIdPrefix, flowIdx, i);
             final String deviceId = String.format("%s-%s-%s", deviceIdPrefix, flowIdx, i);
 
-            registerDevice(deviceId, username, "hono-secret");
+            if (shouldRegister()) {
+                registerDevice(deviceId, username, "hono-secret");
+            }
 
             final ComponentInstance mqttClient = context.createComponent("de.dentrassi.flow.component.mqtt.MqttClient",
                     map(map -> {
