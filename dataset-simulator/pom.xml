@@ -14,7 +14,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <flow.version>0.0.5</flow.version>
+        <flow.version>0.0.6</flow.version>
     </properties>
 
     <dependencyManagement>
@@ -50,6 +50,12 @@
         <dependency>
             <groupId>de.dentrassi.flow</groupId>
             <artifactId>flow-component-mqtt</artifactId>
+            <version>${flow.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>de.dentrassi.flow</groupId>
+            <artifactId>flow-model</artifactId>
             <version>${flow.version}</version>
         </dependency>
 
