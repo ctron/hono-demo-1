@@ -81,6 +81,7 @@ public class Application {
         System.out.format("Hono Consumer - Server: %s:%s%n", host, port);
 
         if (PERSISTENCE_ENABLED) {
+            logger.info("Recording payload");
             this.consumer = new InfluxDbConsumer(makeInfluxDbUrl(),
                     getenv("INFLUXDB_USER"),
                     getenv("INFLUXDB_PASSWORD"),
@@ -90,6 +91,7 @@ public class Application {
         }
 
         if (METRICS_ENABLED) {
+            logger.info("Recording metrics");
             this.metrics = new InfluxDbMetrics(makeInfluxDbUrl(),
                     getenv("INFLUXDB_USER"),
                     getenv("INFLUXDB_PASSWORD"),

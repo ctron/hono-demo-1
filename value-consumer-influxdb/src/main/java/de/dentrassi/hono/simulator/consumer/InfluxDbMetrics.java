@@ -42,7 +42,7 @@ public class InfluxDbMetrics {
 
     public void updateStats(final Instant timestamp, final long messageCount) {
 
-        final Point.Builder p = Point.measurement("consumer-metrics")
+        final Point.Builder p = Point.measurement("consumer")
                 .time(timestamp.toEpochMilli(), TimeUnit.MILLISECONDS);
 
         p.addField("messageCount", messageCount);
