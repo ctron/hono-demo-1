@@ -29,6 +29,7 @@ public class InfluxDbMetrics {
             final String databaseName) {
 
         logger.info("InfluxDB - metrics - URL: {}", uri);
+        logger.info("InfluxDB -      Database: {}", databaseName);
 
         this.db = InfluxDBFactory.connect(uri, username, password);
 
