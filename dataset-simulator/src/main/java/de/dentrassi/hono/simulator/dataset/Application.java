@@ -10,7 +10,6 @@
  *******************************************************************************/
 package de.dentrassi.hono.simulator.dataset;
 
-import static de.dentrassi.flow.model.DotRenderer.newRenderer;
 import static io.glutamate.lang.Exceptions.wrap;
 import static io.glutamate.util.Collections.map;
 import static io.vertx.core.json.Json.encode;
@@ -18,16 +17,12 @@ import static java.lang.System.getenv;
 import static java.util.Collections.singletonMap;
 import static java.util.Optional.ofNullable;
 
-import java.nio.file.Paths;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.dentrassi.flow.ComponentInstance;
 import de.dentrassi.flow.Flow;
 import de.dentrassi.flow.FlowContext;
-import de.dentrassi.flow.event.ListenerHandle;
-import de.dentrassi.flow.model.ModelListener;
 import de.dentrassi.flow.spi.type.ClassLoaderComponentFactory;
 import de.dentrassi.hono.simulator.dataset.AddCredentials.Secret;
 import okhttp3.HttpUrl;
@@ -185,17 +180,18 @@ public class Application {
                             port)));
             flow.start();
 
+            /*
             if (i == 0) {
-
+            
                 final ModelListener model = new ModelListener();
                 try (ListenerHandle listener = flow.registerListener(true, model)) {
                     listener.initialized().get();
                 }
-
+            
                 newRenderer()
                         .render(model.getFlow(), Paths.get("model.dot"));
-
             }
+            */
         }
 
         System.out.println("Flows are running…");
