@@ -51,6 +51,10 @@ public class Application {
                     .parse(String.format("http://%s:%s", REGISTRATION_HOST, REGISTRATION_PORT))
                     .resolve("/credentials/");
 
+    private static boolean shouldRegister() {
+        return REGISTRATION_URL != null;
+    }
+
     private static final MediaType MT_JSON = MediaType.parse("application/json");
 
     private static OkHttpClient http;
@@ -140,10 +144,6 @@ public class Application {
             }
         }
 
-    }
-
-    private static boolean shouldRegister() {
-        return REGISTRATION_HOST != null;
     }
 
     public static void main(final String[] args) throws Exception {
