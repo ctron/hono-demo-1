@@ -260,6 +260,7 @@ public class Application {
                         map.put("port", /* "31883"*/ Integer.toString(port));
                         map.put("username", /* "sensor1@DEFAULT_TENANT" */ username + "@" + TENANT_ID);
                         map.put("password", "hono-secret");
+                        map.put("trustAll", "true"); // WARNING: DO NOT USE IN PRODUCTION
                     }));
 
             context.connectTrigger(context.triggerOutInit(), mqttClient.port("connect"));
