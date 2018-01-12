@@ -10,7 +10,7 @@ RUN alternatives --auto java --verbose && java -version
 
 # build hono M11 before
 
-RUN git clone https://github.com/ctron/hono -b feature/fix_settlement_1
+RUN git clone https://github.com/eclipse/hono
 RUN scl enable rh-maven33 "cd hono && git log -1 && mvn -B clean install -DskipTests"
 
 # build vertx mqtt 3.5.1-SNAPSHOT
