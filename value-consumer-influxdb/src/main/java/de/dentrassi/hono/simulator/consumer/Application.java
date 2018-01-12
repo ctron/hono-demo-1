@@ -108,9 +108,10 @@ public class Application {
         this.vertx = Vertx.vertx();
 
         final ConnectionFactoryBuilder builder = ConnectionFactoryImpl.ConnectionFactoryBuilder.newBuilder()
-                .vertx(this.vertx).host(host).port(port)
-                .user(user)
-                .password(password)
+                .vertx(this.vertx)
+                .host(host).port(port)
+                .user(user).password(password)
+                .enableTls()
                 .disableHostnameVerification();
 
         trustedCerts.ifPresent(builder::trustStorePath);
