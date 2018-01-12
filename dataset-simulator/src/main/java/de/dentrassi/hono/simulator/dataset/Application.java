@@ -159,6 +159,7 @@ public class Application {
         final int numberOfPublishers = ofNullable(getenv("NUMBER_OF_PUBLISHERS")).map(Integer::parseInt).orElse(1);
         final int numberOfFlows = ofNullable(getenv("NUMBER_OF_FLOWS")).map(Integer::parseInt).orElse(1);
 
+        System.out.format("Registration: %s%n", REGISTRATION_URL);
         System.out.format("Dataset: %s%n", datasetFile);
         System.out.format("MQTT Host: %s%n", host);
         System.out.format("MQTT Port: %s%n", port);
