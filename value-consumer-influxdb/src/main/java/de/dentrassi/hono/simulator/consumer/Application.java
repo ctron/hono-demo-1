@@ -35,6 +35,7 @@ import org.eclipse.hono.connection.ConnectionFactoryImpl.ConnectionFactoryBuilde
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.dentrassi.hono.demo.common.InfluxDbMetrics;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.proton.ProtonClientOptions;
@@ -141,7 +142,7 @@ public class Application {
         System.out.format("%s: Processed %s messages%n", now, diff);
 
         if (this.metrics != null) {
-            this.metrics.updateStats(now, diff);
+            this.metrics.updateStats(now, "conumser", "messageCount", diff);
         }
     }
 

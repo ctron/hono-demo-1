@@ -8,9 +8,12 @@
  * Contributors:
  *     Jens Reimann - initial API and implementation
  *******************************************************************************/
-package de.dentrassi.hono.simulator.consumer;
+package de.dentrassi.hono.demo.common;
+
+import static java.util.Collections.singletonMap;
 
 import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -51,12 +54,19 @@ public class InfluxDbMetrics {
         this.db.setDatabase(databaseName);
     }
 
-    public void updateStats(final Instant timestamp, final long messageCount) {
+    public void updateStats(final Instant timestamp, final String measurement, final String name, final Number value) {
+        updateStats(timestamp, measurement, singletonMap(name, value));
+    }
 
-        final Point.Builder p = Point.measurement("consumer")
+    public void updateStats(final Instant timestamp, final String measurement, final Map<String, Number> values) {
+
+        final Point.Builder p = Point.measurement(measurement)
                 .time(timestamp.toEpochMilli(), TimeUnit.MILLISECONDS);
 
-        p.addField("messageCount", messageCount);
+        for (final Map.Entry<String, Number> entry : values.entrySet()) {
+            p.addField(entry.getKey(), entry.getValue());
+        }
+
         p.tag("host", HOSTNAME);
 
         this.db.write(p.build());
