@@ -10,145 +10,31 @@
  *******************************************************************************/
 package de.dentrassi.hono.simulator.dataset;
 
+import static de.dentrassi.hono.demo.common.Register.shouldRegister;
 import static io.glutamate.lang.Exceptions.wrap;
 import static io.glutamate.util.Collections.map;
-import static io.vertx.core.json.Json.encode;
 import static java.lang.System.getenv;
-import static java.util.Collections.singletonMap;
 import static java.util.Optional.ofNullable;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import de.dentrassi.flow.ComponentInstance;
 import de.dentrassi.flow.Flow;
 import de.dentrassi.flow.FlowContext;
 import de.dentrassi.flow.spi.type.ClassLoaderComponentFactory;
-import de.dentrassi.hono.simulator.dataset.AddCredentials.Secret;
-import okhttp3.HttpUrl;
-import okhttp3.MediaType;
+import de.dentrassi.hono.demo.common.Register;
 import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
 
 public class Application {
 
-    private static final Logger logger = LoggerFactory.getLogger(Application.class);
-
     private static final String TENANT_ID = "DEFAULT_TENANT";
-
-    private static final String REGISTRATION_HOST = getenv("HONO_SERVICE_DEVICE_REGISTRY_SERVICE_HOST");
-    private static final String REGISTRATION_PORT = getenv("HONO_SERVICE_DEVICE_REGISTRY_SERVICE_PORT_HTTP");
-
-    private static final HttpUrl REGISTRATION_URL = REGISTRATION_HOST == null ? null
-            : HttpUrl
-                    .parse(String.format("http://%s:%s", REGISTRATION_HOST, REGISTRATION_PORT))
-                    .resolve("/registration/");
-
-    private static final HttpUrl CREDENTIALS_URL = REGISTRATION_HOST == null ? null
-            : HttpUrl
-                    .parse(String.format("http://%s:%s", REGISTRATION_HOST, REGISTRATION_PORT))
-                    .resolve("/credentials/");
-
-    private static boolean shouldRegister() {
-        return REGISTRATION_URL != null;
-    }
-
-    private static final MediaType MT_JSON = MediaType.parse("application/json");
 
     private static OkHttpClient http;
 
-    private static void registerDevice(final String deviceId, final String username, final String password)
-            throws Exception {
-
-        try (final Response getDevice = http.newCall(new Request.Builder()
-                .url(
-                        REGISTRATION_URL
-                                .resolve(TENANT_ID + "/")
-                                .resolve(deviceId))
-                .get()
-                .build()).execute()) {
-
-            logger.debug("Registration URL - get: {}", getDevice.request().url());
-
-            if (getDevice.isSuccessful()) {
-
-                logger.debug("Device {} already registered", deviceId);
-
-            } else {
-
-                logger.debug("Failed to retrieve registration: {} {}", getDevice.code(), getDevice.message());
-
-                try (final Response newDevice = http.newCall(new Request.Builder()
-                        .url(
-                                REGISTRATION_URL
-                                        .resolve(TENANT_ID))
-                        .post(RequestBody.create(MT_JSON, encode(singletonMap("device-id", deviceId))))
-                        .build()).execute()) {
-
-                    logger.debug("Registration URL - post: {}", newDevice.request().url());
-
-                    if (!newDevice.isSuccessful()) {
-                        throw new RuntimeException(
-                                "Unable to register device: " + deviceId + " -> " + newDevice.code() + ": "
-                                        + newDevice.message());
-                    }
-                    logger.info("Registered device: {}", deviceId);
-                }
-            }
-        }
-
-        try (Response getCredentials = http.newCall(new Request.Builder()
-                .url(
-                        CREDENTIALS_URL
-                                .resolve(TENANT_ID + "/")
-                                .resolve(username + "/")
-                                .resolve("hashed-password"))
-                .get()
-                .build())
-                .execute()) {
-
-            logger.debug("Credentials URL - get: {}", getCredentials.request().url());
-
-            if (getCredentials.isSuccessful()) {
-
-                logger.debug("User {} already registered", username);
-
-            } else {
-
-                final AddCredentials add = new AddCredentials();
-                add.setAuthId(username);
-                add.setDeviceId(deviceId);
-                add.setType("hashed-password");
-                add.getSecrets().add(Secret.sha512(password));
-
-                try (final Response newUser = http.newCall(new Request.Builder()
-                        .url(
-                                CREDENTIALS_URL
-                                        .resolve(TENANT_ID))
-                        .post(RequestBody.create(MT_JSON, encode(add)))
-                        .build()).execute()) {
-
-                    logger.debug("Credentials URL - get: {}", newUser.request().url());
-
-                    if (!newUser.isSuccessful()) {
-                        throw new RuntimeException(
-                                "Unable to register user: " + username + " -> " + newUser.code() + ": "
-                                        + newUser.message());
-                    }
-
-                    logger.info("Registered user {}", username);
-
-                }
-            }
-        }
-
-    }
+    private static Register register;
 
     public static void main(final String[] args) throws Exception {
 
         http = new OkHttpClient.Builder().build();
+        register = new Register(http, TENANT_ID);
 
         final String datasetFile = getenv("DATASET_FILE");
         final String host = getenv("HONO_ADAPTER_MQTT_VERTX_SERVICE_HOST");
@@ -159,7 +45,6 @@ public class Application {
         final int numberOfPublishers = ofNullable(getenv("NUMBER_OF_PUBLISHERS")).map(Integer::parseInt).orElse(1);
         final int numberOfFlows = ofNullable(getenv("NUMBER_OF_FLOWS")).map(Integer::parseInt).orElse(1);
 
-        System.out.format("Registration: %s%n", REGISTRATION_URL);
         System.out.format("Dataset: %s%n", datasetFile);
         System.out.format("MQTT Host: %s%n", host);
         System.out.format("MQTT Port: %s%n", port);
@@ -251,7 +136,7 @@ public class Application {
             final String deviceId = String.format("%s-%s-%s", deviceIdPrefix, flowIdx, i);
 
             if (shouldRegister()) {
-                registerDevice(deviceId, username, "hono-secret");
+                register.device(deviceId, username, "hono-secret");
             }
 
             final ComponentInstance mqttClient = context.createComponent("de.dentrassi.flow.component.mqtt.MqttClient",
