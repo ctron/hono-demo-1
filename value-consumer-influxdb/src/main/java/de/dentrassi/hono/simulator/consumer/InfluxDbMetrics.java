@@ -46,6 +46,7 @@ public class InfluxDbMetrics {
                 .time(timestamp.toEpochMilli(), TimeUnit.MILLISECONDS);
 
         p.addField("messageCount", messageCount);
+        p.tag("host", System.getProperty("HOSTNAME"));
 
         this.db.write(p.build());
     }
