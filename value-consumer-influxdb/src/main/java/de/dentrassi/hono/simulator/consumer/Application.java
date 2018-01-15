@@ -10,6 +10,7 @@
  *******************************************************************************/
 package de.dentrassi.hono.simulator.consumer;
 
+import static java.lang.Integer.parseInt;
 import static java.lang.System.getenv;
 import static java.util.Optional.ofNullable;
 
@@ -28,6 +29,7 @@ import org.apache.qpid.proton.message.Message;
 import org.eclipse.hono.client.HonoClient;
 import org.eclipse.hono.client.MessageConsumer;
 import org.eclipse.hono.client.impl.HonoClientImpl;
+import org.eclipse.hono.config.ClientConfigProperties;
 import org.eclipse.hono.connection.ConnectionFactoryImpl;
 import org.eclipse.hono.connection.ConnectionFactoryImpl.ConnectionFactoryBuilder;
 import org.slf4j.Logger;
@@ -116,7 +118,13 @@ public class Application {
 
         trustedCerts.ifPresent(builder::trustStorePath);
 
-        this.honoClient = new HonoClientImpl(this.vertx, builder.build());
+        final ClientConfigProperties config = new ClientConfigProperties();
+
+        if (System.getenv("HONO_INITIAL_CREDITS") != null) {
+            config.setInitialCredits(parseInt(System.getenv("HONO_INITIAL_CREDITS")));
+        }
+
+        this.honoClient = new HonoClientImpl(this.vertx, builder.build(), config);
 
         this.latch = new CountDownLatch(1);
 
