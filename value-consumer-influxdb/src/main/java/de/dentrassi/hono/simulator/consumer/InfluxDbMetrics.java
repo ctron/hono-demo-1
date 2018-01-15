@@ -11,6 +11,7 @@
 package de.dentrassi.hono.simulator.consumer;
 
 import java.time.Instant;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import org.influxdb.InfluxDB;
@@ -22,6 +23,16 @@ import org.slf4j.LoggerFactory;
 public class InfluxDbMetrics {
 
     private static final Logger logger = LoggerFactory.getLogger(InfluxDbMetrics.class);
+
+    private static final String HOSTNAME;
+
+    static {
+        String h = System.getenv("HOSTNAME");
+        if (h == null) {
+            h = UUID.randomUUID().toString();
+        }
+        HOSTNAME = h;
+    }
 
     private final InfluxDB db;
 
@@ -46,7 +57,7 @@ public class InfluxDbMetrics {
                 .time(timestamp.toEpochMilli(), TimeUnit.MILLISECONDS);
 
         p.addField("messageCount", messageCount);
-        p.tag("host", System.getProperty("HOSTNAME"));
+        p.tag("host", HOSTNAME);
 
         this.db.write(p.build());
     }
