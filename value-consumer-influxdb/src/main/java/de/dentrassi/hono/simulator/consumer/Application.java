@@ -142,7 +142,7 @@ public class Application {
         System.out.format("%s: Processed %s messages%n", now, diff);
 
         if (this.metrics != null) {
-            this.metrics.updateStats(now, "conumser", "messageCount", diff);
+            this.metrics.updateStats(now, "consumer", "messageCount", diff);
         }
     }
 
