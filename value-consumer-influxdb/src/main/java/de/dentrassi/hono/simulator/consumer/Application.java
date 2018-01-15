@@ -146,7 +146,7 @@ public class Application {
         }
     }
 
-    private String makeInfluxDbUrl() {
+    private static String makeInfluxDbUrl() {
         final String url = getenv("INFLUXDB_URL");
         if (url != null && !url.isEmpty()) {
             return url;
