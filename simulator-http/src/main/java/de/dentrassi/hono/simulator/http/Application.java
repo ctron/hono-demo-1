@@ -106,7 +106,7 @@ public class Application {
         final long sent = Device.SENT.getAndSet(0);
         final long success = Device.SUCCESS.getAndSet(0);
         final long failure = Device.FAILURE.getAndSet(0);
-        final long backlog = Device.BACKLOG.getAndSet(0);
+        final long backlog = Device.BACKLOG.get();
 
         if (metrics != null) {
             final Map<String, Number> values = new HashMap<>(3);
