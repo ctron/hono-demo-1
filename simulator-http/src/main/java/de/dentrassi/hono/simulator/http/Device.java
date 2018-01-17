@@ -46,6 +46,8 @@ public class Device {
         } else {
             HONO_HTTP_URL = null;
         }
+
+        System.out.println("Running Async: " + ASYNC);
     }
 
     private final OkHttpClient client;
