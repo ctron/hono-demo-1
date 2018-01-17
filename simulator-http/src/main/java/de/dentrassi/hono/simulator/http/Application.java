@@ -13,9 +13,12 @@ package de.dentrassi.hono.simulator.http;
 import static java.lang.System.getenv;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -27,11 +30,16 @@ import org.slf4j.LoggerFactory;
 import de.dentrassi.hono.demo.common.InfluxDbMetrics;
 import de.dentrassi.hono.demo.common.Register;
 import okhttp3.ConnectionPool;
+import okhttp3.Cookie;
+import okhttp3.CookieJar;
+import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 
 public class Application {
     private static final Logger logger = LoggerFactory.getLogger(Application.class);
     private static final String DEFAULT_TENANT = "DEFAULT_TENANT";
+
+    private static final boolean COOKIES = Boolean.parseBoolean(System.getenv().getOrDefault("HTTP_COOKIES", "true"));
 
     private static InfluxDbMetrics metrics;
 
@@ -64,17 +72,34 @@ public class Application {
         final int numberOfDevices = envOrElse("NUM_DEVICES", Integer::parseInt, 10);
         final int numberOfThreads = envOrElse("NUM_THREADS", Integer::parseInt, 10);
 
+        final OkHttpClient.Builder httpBuilder = new OkHttpClient.Builder();
+
         final String poolSize = getenv("CONNECTION_POOL_SIZE");
-        final ConnectionPool connectionPool;
+
         if (poolSize != null) {
-            connectionPool = new ConnectionPool(Integer.parseInt(poolSize), 1, TimeUnit.MINUTES);
-        } else {
-            connectionPool = new ConnectionPool();
+            final ConnectionPool connectionPool = new ConnectionPool(Integer.parseInt(poolSize), 1, TimeUnit.MINUTES);
+            httpBuilder.connectionPool(connectionPool);
         }
 
-        final OkHttpClient http = new OkHttpClient.Builder()
-                .connectionPool(connectionPool)
-                .build();
+        if (COOKIES) {
+            final CookieJar cookieJar = new CookieJar() {
+                private final Map<String, List<Cookie>> cookieStore = new ConcurrentHashMap<>();
+
+                @Override
+                public void saveFromResponse(final HttpUrl url, final List<Cookie> cookies) {
+                    this.cookieStore.put(url.host(), cookies);
+                }
+
+                @Override
+                public List<Cookie> loadForRequest(final HttpUrl url) {
+                    final List<Cookie> cookies = this.cookieStore.get(url.host());
+                    return cookies != null ? cookies : new ArrayList<>();
+                }
+            };
+            httpBuilder.cookieJar(cookieJar);
+        }
+
+        final OkHttpClient http = httpBuilder.build();
 
         final String deviceIdPrefix = System.getenv("HOSTNAME");
 
