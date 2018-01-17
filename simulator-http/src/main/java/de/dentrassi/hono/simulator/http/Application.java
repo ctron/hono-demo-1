@@ -80,11 +80,12 @@ public class Application {
 
         final Register register = new Register(http, DEFAULT_TENANT);
 
+        final ScheduledExecutorService statsExecutor = Executors.newSingleThreadScheduledExecutor();
+        statsExecutor.scheduleAtFixedRate(Application::dumpStats, 1, 1, TimeUnit.SECONDS);
+
         final ScheduledExecutorService executor = Executors.newScheduledThreadPool(numberOfThreads);
 
         try {
-
-            executor.scheduleAtFixedRate(Application::dumpStats, 1, 1, TimeUnit.SECONDS);
 
             for (int i = 0; i < numberOfDevices; i++) {
 
