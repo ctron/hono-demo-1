@@ -21,6 +21,8 @@ import okhttp3.Response;
 
 public class Device {
 
+    private static final String HEADER_HONO_DEVICE_REG_ASSERTION = "Hono-Reg-Assertion";
+
     private static final Logger logger = LoggerFactory.getLogger(Device.class);
 
     private static final MediaType JSON = MediaType.parse("application/json");
@@ -73,6 +75,8 @@ public class Device {
 
     private final String password;
 
+    private String assertion;
+
     public Device(final String user, final String deviceId, final String tenant, final String password,
             final OkHttpClient client, final Register register) {
         this.client = client;
@@ -101,7 +105,13 @@ public class Device {
             return;
         }
 
-        final Call call = this.client.newCall(this.request);
+        final Call call;
+        if (this.assertion != null) {
+            call = this.client.newCall(
+                    this.request.newBuilder().header(HEADER_HONO_DEVICE_REG_ASSERTION, this.assertion).build());
+        } else {
+            call = this.client.newCall(this.request);
+        }
 
         SENT.incrementAndGet();
 
@@ -116,10 +126,11 @@ public class Device {
                         BACKLOG.decrementAndGet();
                         if (response.isSuccessful()) {
                             SUCCESS.incrementAndGet();
+                            handleSuccess(response);
                         } else {
                             logger.trace("Result code: {}", response.code());
                             FAILURE.incrementAndGet();
-                            handleFailure(response.code());
+                            handleFailure(response);
                         }
                         response.close();
                     }
@@ -137,10 +148,11 @@ public class Device {
                 try (final Response response = call.execute()) {
                     if (response.isSuccessful()) {
                         SUCCESS.incrementAndGet();
+                        handleSuccess(response);
                     } else {
                         logger.trace("Result code: {}", response.code());
                         FAILURE.incrementAndGet();
-                        handleFailure(response.code());
+                        handleFailure(response);
                     }
                 }
             }
@@ -152,9 +164,15 @@ public class Device {
 
     }
 
-    protected void handleFailure(final int code) {
+    protected void handleSuccess(final Response response) {
+        this.assertion = response.header(HEADER_HONO_DEVICE_REG_ASSERTION);
+    }
+
+    protected void handleFailure(final Response response) {
+        this.assertion = null;
+
         try {
-            switch (code) {
+            switch (response.code()) {
             case 401:
                 if (AUTO_REGISTER) {
                     register();
