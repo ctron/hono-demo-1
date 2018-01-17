@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import de.dentrassi.hono.demo.common.InfluxDbMetrics;
 import de.dentrassi.hono.demo.common.Register;
+import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
 
 public class Application {
@@ -63,7 +64,16 @@ public class Application {
         final int numberOfDevices = envOrElse("NUM_DEVICES", Integer::parseInt, 10);
         final int numberOfThreads = envOrElse("NUM_THREADS", Integer::parseInt, 10);
 
+        final String poolSize = getenv("CONNECTION_POOL_SIZE");
+        final ConnectionPool connectionPool;
+        if (poolSize != null) {
+            connectionPool = new ConnectionPool(Integer.parseInt(poolSize), 1, TimeUnit.MINUTES);
+        } else {
+            connectionPool = new ConnectionPool();
+        }
+
         final OkHttpClient http = new OkHttpClient.Builder()
+                .connectionPool(connectionPool)
                 .build();
 
         final String deviceIdPrefix = System.getenv("HOSTNAME");
