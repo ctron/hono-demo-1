@@ -39,7 +39,7 @@ public class Application {
     private static final Logger logger = LoggerFactory.getLogger(Application.class);
     private static final String DEFAULT_TENANT = "DEFAULT_TENANT";
 
-    private static final boolean COOKIES = Boolean.parseBoolean(System.getenv().getOrDefault("HTTP_COOKIES", "true"));
+    private static final boolean COOKIES = Boolean.parseBoolean(System.getenv().getOrDefault("HTTP_COOKIES", "false"));
 
     private static InfluxDbMetrics metrics;
 
@@ -77,11 +77,17 @@ public class Application {
         final String poolSize = getenv("CONNECTION_POOL_SIZE");
 
         if (poolSize != null) {
+            System.out.println("Enabling connection pool");
             final ConnectionPool connectionPool = new ConnectionPool(Integer.parseInt(poolSize), 1, TimeUnit.MINUTES);
             httpBuilder.connectionPool(connectionPool);
         }
 
         if (COOKIES) {
+            /**
+             * Cookies don't really work as we would need a cookie per device and not per
+             * URL
+             */
+            System.out.println("Enabling cookies");
             final CookieJar cookieJar = new CookieJar() {
                 private final Map<String, List<Cookie>> cookieStore = new ConcurrentHashMap<>();
 
