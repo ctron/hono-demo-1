@@ -10,7 +10,6 @@
  *******************************************************************************/
 package de.dentrassi.hono.simulator.http;
 
-import static de.dentrassi.hono.demo.common.Register.shouldRegister;
 import static java.lang.System.getenv;
 
 import java.time.Instant;
@@ -82,11 +81,7 @@ public class Application {
                 final String username = String.format("user-%s-%s", deviceIdPrefix, i);
                 final String deviceId = String.format("%s-%s", deviceIdPrefix, i);
 
-                if (shouldRegister()) {
-                    register.device(deviceId, username, "hono-secret");
-                }
-
-                final Device device = new Device(username + "@" + DEFAULT_TENANT, "hono-secret", http);
+                final Device device = new Device(username, deviceId, DEFAULT_TENANT, "hono-secret", http, register);
                 executor.scheduleAtFixedRate(device::tick, 1, 1, TimeUnit.SECONDS);
             }
 

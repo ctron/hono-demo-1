@@ -1,11 +1,14 @@
 package de.dentrassi.hono.simulator.http;
 
+import static de.dentrassi.hono.demo.common.Register.shouldRegister;
+
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.dentrassi.hono.demo.common.Register;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Credentials;
@@ -33,6 +36,9 @@ public class Device {
 
     private static final boolean ASYNC = Boolean.parseBoolean(System.getenv().getOrDefault("HTTP_ASYNC", "false"));
 
+    private static final boolean AUTO_REGISTER = Boolean
+            .parseBoolean(System.getenv().getOrDefault("AUTO_REGISTER", "true"));
+
     static {
         String url = System.getenv("HONO_HTTP_URL");
 
@@ -58,15 +64,34 @@ public class Device {
 
     private final Request request;
 
-    public Device(final String user, final String password, final OkHttpClient client) {
+    private final Register register;
+
+    private final String user;
+
+    private final String deviceId;
+
+    private final String password;
+
+    public Device(final String user, final String deviceId, final String tenant, final String password,
+            final OkHttpClient client, final Register register) {
         this.client = client;
-        this.auth = Credentials.basic(user, password);
+        this.register = register;
+        this.user = user;
+        this.deviceId = deviceId;
+        this.password = password;
+        this.auth = Credentials.basic(user + "@" + tenant, password);
         this.body = RequestBody.create(JSON, "{foo: 42}");
         this.request = new Request.Builder()
                 .url(HONO_HTTP_URL)
                 .post(this.body)
                 .header("Authorization", this.auth)
                 .build();
+    }
+
+    public void register() throws Exception {
+        if (shouldRegister()) {
+            this.register.device(this.deviceId, this.user, this.password);
+        }
     }
 
     public void tick() {
@@ -91,6 +116,7 @@ public class Device {
                         } else {
                             logger.trace("Result code: {}", response.code());
                             FAILURE.incrementAndGet();
+                            handleFailure(response.code());
                         }
                         response.close();
                     }
@@ -104,12 +130,13 @@ public class Device {
 
             } else {
 
-                try (final Response result = call.execute()) {
-                    if (result.isSuccessful()) {
+                try (final Response response = call.execute()) {
+                    if (response.isSuccessful()) {
                         SUCCESS.incrementAndGet();
                     } else {
-                        logger.trace("Result code: {}", result.code());
+                        logger.trace("Result code: {}", response.code());
                         FAILURE.incrementAndGet();
+                        handleFailure(response.code());
                     }
                 }
             }
@@ -119,5 +146,19 @@ public class Device {
             logger.debug("Failed to tick", e);
         }
 
+    }
+
+    protected void handleFailure(final int code) {
+        try {
+            switch (code) {
+            case 401:
+                if (AUTO_REGISTER) {
+                    register();
+                }
+                break;
+            }
+        } catch (final Exception e) {
+            logger.warn("Failed to handle failure", e);
+        }
     }
 }
