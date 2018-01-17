@@ -106,17 +106,19 @@ public class Application {
         final long sent = Device.SENT.getAndSet(0);
         final long success = Device.SUCCESS.getAndSet(0);
         final long failure = Device.FAILURE.getAndSet(0);
+        final long backlog = Device.BACKLOG.getAndSet(0);
 
         if (metrics != null) {
             final Map<String, Number> values = new HashMap<>(3);
             values.put("sent", sent);
             values.put("success", success);
             values.put("failure", failure);
+            values.put("backlog", backlog);
 
             metrics.updateStats(Instant.now(), "http-publish", values);
         }
 
-        System.out.format("Sent: %10s, Success: %10s, Failure: %10s%n", sent, success, failure);
+        System.out.format("Sent: %10s, Success: %10s, Failure: %10s, Backlog: %10s%n", sent, success, failure, backlog);
         System.out.flush();
     }
 

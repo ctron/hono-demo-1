@@ -33,6 +33,7 @@ public class Device {
     public static final AtomicLong SENT = new AtomicLong();
     public static final AtomicLong SUCCESS = new AtomicLong();
     public static final AtomicLong FAILURE = new AtomicLong();
+    public static final AtomicLong BACKLOG = new AtomicLong();
 
     private static final boolean ASYNC = Boolean.parseBoolean(System.getenv().getOrDefault("HTTP_ASYNC", "false"));
 
@@ -107,10 +108,12 @@ public class Device {
         try {
             if (ASYNC) {
 
+                BACKLOG.incrementAndGet();
                 call.enqueue(new Callback() {
 
                     @Override
                     public void onResponse(final Call call, final Response response) throws IOException {
+                        BACKLOG.decrementAndGet();
                         if (response.isSuccessful()) {
                             SUCCESS.incrementAndGet();
                         } else {
@@ -123,6 +126,7 @@ public class Device {
 
                     @Override
                     public void onFailure(final Call call, final IOException e) {
+                        BACKLOG.decrementAndGet();
                         FAILURE.incrementAndGet();
                         logger.debug("Failed to tick", e);
                     }
