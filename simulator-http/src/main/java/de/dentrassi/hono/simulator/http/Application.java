@@ -102,12 +102,14 @@ public class Application {
         final long success = Device.SUCCESS.getAndSet(0);
         final long failure = Device.FAILURE.getAndSet(0);
 
-        final Map<String, Number> values = new HashMap<>(3);
-        values.put("sent", sent);
-        values.put("success", success);
-        values.put("failure", failure);
+        if (metrics != null) {
+            final Map<String, Number> values = new HashMap<>(3);
+            values.put("sent", sent);
+            values.put("success", success);
+            values.put("failure", failure);
 
-        metrics.updateStats(Instant.now(), "http-publish", values);
+            metrics.updateStats(Instant.now(), "http-publish", values);
+        }
 
         System.out.format("Sent: %10s, Success: %10s, Failure: %10s%n", sent, success, failure);
         System.out.flush();

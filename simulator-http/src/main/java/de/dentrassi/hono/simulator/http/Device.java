@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import okhttp3.Call;
+import okhttp3.Callback;
 import okhttp3.Credentials;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
@@ -30,6 +31,8 @@ public class Device {
     public static final AtomicLong SUCCESS = new AtomicLong();
     public static final AtomicLong FAILURE = new AtomicLong();
 
+    private static final boolean ASYNC = Boolean.parseBoolean(System.getenv().getOrDefault("HTTP_ASYNC", "false"));
+
     static {
         String url = System.getenv("HONO_HTTP_URL");
 
@@ -49,9 +52,19 @@ public class Device {
 
     private final String auth;
 
+    private final RequestBody body;
+
+    private final Request request;
+
     public Device(final String user, final String password, final OkHttpClient client) {
         this.client = client;
         this.auth = Credentials.basic(user, password);
+        this.body = RequestBody.create(JSON, "{foo: 42}");
+        this.request = new Request.Builder()
+                .url(HONO_HTTP_URL)
+                .post(this.body)
+                .header("Authorization", this.auth)
+                .build();
     }
 
     public void tick() {
@@ -60,23 +73,45 @@ public class Device {
             return;
         }
 
-        final Request request = new Request.Builder()
-                .url(HONO_HTTP_URL)
-                .post(RequestBody.create(JSON, "{foo: 42}"))
-                .header("Authorization", this.auth)
-                .build();
-
-        final Call call = this.client.newCall(request);
+        final Call call = this.client.newCall(this.request);
 
         SENT.incrementAndGet();
 
-        try (final Response result = call.execute()) {
-            if (result.isSuccessful()) {
-                SUCCESS.incrementAndGet();
+        try {
+            if (ASYNC) {
+
+                call.enqueue(new Callback() {
+
+                    @Override
+                    public void onResponse(final Call call, final Response response) throws IOException {
+                        if (response.isSuccessful()) {
+                            SUCCESS.incrementAndGet();
+                        } else {
+                            logger.trace("Result code: {}", response.code());
+                            FAILURE.incrementAndGet();
+                        }
+                        response.close();
+                    }
+
+                    @Override
+                    public void onFailure(final Call call, final IOException e) {
+                        FAILURE.incrementAndGet();
+                        logger.debug("Failed to tick", e);
+                    }
+                });
+
             } else {
-                logger.debug("Result code: {}", result.code());
-                FAILURE.incrementAndGet();
+
+                try (final Response result = call.execute()) {
+                    if (result.isSuccessful()) {
+                        SUCCESS.incrementAndGet();
+                    } else {
+                        logger.trace("Result code: {}", result.code());
+                        FAILURE.incrementAndGet();
+                    }
+                }
             }
+
         } catch (final IOException e) {
             FAILURE.incrementAndGet();
             logger.debug("Failed to tick", e);
