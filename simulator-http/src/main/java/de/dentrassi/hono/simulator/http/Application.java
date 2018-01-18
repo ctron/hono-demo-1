@@ -12,6 +12,8 @@ package de.dentrassi.hono.simulator.http;
 
 import static java.lang.System.getenv;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -113,6 +115,9 @@ public class Application {
 
         final Register register = new Register(http, DEFAULT_TENANT);
 
+        final ScheduledExecutorService deadlockExecutor = Executors.newSingleThreadScheduledExecutor();
+        deadlockExecutor.scheduleAtFixedRate(Application::detectDeadlock, 1, 1, TimeUnit.SECONDS);
+
         final ScheduledExecutorService statsExecutor = Executors.newSingleThreadScheduledExecutor();
         statsExecutor.scheduleAtFixedRate(Application::dumpStats, 1, 1, TimeUnit.SECONDS);
 
@@ -136,43 +141,58 @@ public class Application {
 
     }
 
+    private static void detectDeadlock() {
+        final ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
+        final long[] threadIds = threadBean.findDeadlockedThreads();
+
+        if (threadIds != null) {
+            System.out.format("Threads in deadlock: %s%n", threadIds.length);
+        }
+    }
+
     private static void dumpStats() {
-        final long sent = Device.SENT.getAndSet(0);
-        final long success = Device.SUCCESS.getAndSet(0);
-        final long failure = Device.FAILURE.getAndSet(0);
-        final long backlog = Device.BACKLOG.get();
+        try {
+            final long sent = Device.SENT.getAndSet(0);
+            final long success = Device.SUCCESS.getAndSet(0);
+            final long failure = Device.FAILURE.getAndSet(0);
+            final long backlog = Device.BACKLOG.get();
 
-        final Map<Integer, Long> counts = new TreeMap<>();
+            final Map<Integer, Long> counts = new TreeMap<>();
 
-        for (final Map.Entry<Integer, AtomicLong> entry : Device.ERRORS.entrySet()) {
-            final int code = entry.getKey();
-            final long value = entry.getValue().getAndSet(0);
-            counts.put(code, value);
-        }
+            for (final Map.Entry<Integer, AtomicLong> entry : Device.ERRORS.entrySet()) {
+                final int code = entry.getKey();
+                final long value = entry.getValue().getAndSet(0);
+                counts.put(code, value);
+            }
 
-        final Instant now = Instant.now();
+            final Instant now = Instant.now();
 
-        if (metrics != null) {
-            final Map<String, Number> values = new HashMap<>(4);
-            values.put("sent", sent);
-            values.put("success", success);
-            values.put("failure", failure);
-            values.put("backlog", backlog);
-            metrics.updateStats(now, "http-publish", values);
+            if (metrics != null) {
+                final Map<String, Number> values = new HashMap<>(4);
+                values.put("sent", sent);
+                values.put("success", success);
+                values.put("failure", failure);
+                values.put("backlog", backlog);
+                metrics.updateStats(now, "http-publish", values);
 
-            final Map<String, Number> errors = new HashMap<>(4);
+                if (!counts.isEmpty()) {
+                    final Map<String, Number> errors = new HashMap<>();
+                    counts.forEach((code, num) -> {
+                        errors.put("" + code, num);
+                    });
+                    metrics.updateStats(now, "http-errors", errors);
+                }
+            }
+
+            System.out.format("Sent: %10s, Success: %8s, Failure: %8s, Backlog: %8s", sent, success, failure, backlog);
             counts.forEach((code, num) -> {
-                errors.put("" + code, num);
+                System.out.format(", %03d: %8s", code, num);
             });
-            metrics.updateStats(now, "http-errors", errors);
+            System.out.println();
+            System.out.flush();
+        } catch (final Exception e) {
+            logger.error("Failed to dump statistics", e);
         }
-
-        System.out.format("Sent: %10s, Success: %8s, Failure: %8s, Backlog: %8s", sent, success, failure, backlog);
-        counts.forEach((code, num) -> {
-            System.out.format(", %03d: %8s", code, num);
-        });
-        System.out.println();
-        System.out.flush();
     }
 
     private static <T> T envOrElse(final String name, final Function<String, T> converter, final T defaultValue) {
