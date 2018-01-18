@@ -3,6 +3,8 @@ package de.dentrassi.hono.simulator.http;
 import static de.dentrassi.hono.demo.common.Register.shouldRegister;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.slf4j.Logger;
@@ -34,6 +36,7 @@ public class Device {
     public static final AtomicLong SUCCESS = new AtomicLong();
     public static final AtomicLong FAILURE = new AtomicLong();
     public static final AtomicLong BACKLOG = new AtomicLong();
+    public static final Map<Integer, AtomicLong> ERRORS = new ConcurrentHashMap<>();
 
     private static final boolean ASYNC = Boolean.parseBoolean(System.getenv().getOrDefault("HTTP_ASYNC", "false"));
     private static final String METHOD = System.getenv().get("HTTP_METHOD");
@@ -183,9 +186,13 @@ public class Device {
     }
 
     protected void handleFailure(final Response response) {
-        System.out.println(response.code());
+        final int code = response.code();
+
+        final AtomicLong counter = ERRORS.computeIfAbsent(code, x -> new AtomicLong());
+        counter.incrementAndGet();
+
         try {
-            switch (response.code()) {
+            switch (code) {
             case 401:
                 if (AUTO_REGISTER) {
                     register();

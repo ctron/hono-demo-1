@@ -18,10 +18,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
 import org.slf4j.Logger;
@@ -140,17 +142,39 @@ public class Application {
         final long failure = Device.FAILURE.getAndSet(0);
         final long backlog = Device.BACKLOG.get();
 
-        if (metrics != null) {
-            final Map<String, Number> values = new HashMap<>(3);
+        final Map<String, Number> values = metrics != null ? new HashMap<>() : null;
+
+        if (values != null) {
+
             values.put("sent", sent);
             values.put("success", success);
             values.put("failure", failure);
             values.put("backlog", backlog);
 
+        }
+
+        final Map<Integer, Long> counts = new TreeMap<>();
+
+        for (final Map.Entry<Integer, AtomicLong> entry : Device.ERRORS.entrySet()) {
+
+            final int code = entry.getKey();
+            final long value = entry.getValue().getAndSet(0);
+            if (values != null) {
+                values.put("error." + code, value);
+            }
+
+            counts.put(code, value);
+        }
+
+        if (values != null) {
             metrics.updateStats(Instant.now(), "http-publish", values);
         }
 
-        System.out.format("Sent: %10s, Success: %10s, Failure: %10s, Backlog: %10s%n", sent, success, failure, backlog);
+        System.out.format("Sent: %10s, Success: %8s, Failure: %8s, Backlog: %8s", sent, success, failure, backlog);
+        counts.forEach((code, num) -> {
+            System.out.format(", %03d: %8s", code, num);
+        });
+        System.out.println();
         System.out.flush();
     }
 
