@@ -142,32 +142,29 @@ public class Application {
         final long failure = Device.FAILURE.getAndSet(0);
         final long backlog = Device.BACKLOG.get();
 
-        final Map<String, Number> values = metrics != null ? new HashMap<>() : null;
+        final Map<Integer, Long> counts = new TreeMap<>();
 
-        if (values != null) {
+        for (final Map.Entry<Integer, AtomicLong> entry : Device.ERRORS.entrySet()) {
+            final int code = entry.getKey();
+            final long value = entry.getValue().getAndSet(0);
+            counts.put(code, value);
+        }
 
+        final Instant now = Instant.now();
+
+        if (metrics != null) {
+            final Map<String, Number> values = new HashMap<>(4);
             values.put("sent", sent);
             values.put("success", success);
             values.put("failure", failure);
             values.put("backlog", backlog);
+            metrics.updateStats(now, "http-publish", values);
 
-        }
-
-        final Map<Integer, Long> counts = new TreeMap<>();
-
-        for (final Map.Entry<Integer, AtomicLong> entry : Device.ERRORS.entrySet()) {
-
-            final int code = entry.getKey();
-            final long value = entry.getValue().getAndSet(0);
-            if (values != null) {
-                values.put("error." + code, value);
-            }
-
-            counts.put(code, value);
-        }
-
-        if (values != null) {
-            metrics.updateStats(Instant.now(), "http-publish", values);
+            final Map<String, Number> errors = new HashMap<>(4);
+            counts.forEach((code, num) -> {
+                errors.put("" + code, num);
+            });
+            metrics.updateStats(now, "http-errors", errors);
         }
 
         System.out.format("Sent: %10s, Success: %8s, Failure: %8s, Backlog: %8s", sent, success, failure, backlog);
