@@ -204,6 +204,7 @@ public class Device {
         try {
             switch (code) {
             case 401:
+            case 403: //$FALL-THROUGH$
                 if (AUTO_REGISTER && shouldRegister()) {
                     register();
                 }
