@@ -21,8 +21,6 @@ import okhttp3.Response;
 
 public class Device {
 
-    private static final String HEADER_HONO_DEVICE_REG_ASSERTION = "Hono-Reg-Assertion";
-
     private static final Logger logger = LoggerFactory.getLogger(Device.class);
 
     private static final MediaType JSON = MediaType.parse("application/json");
@@ -75,8 +73,6 @@ public class Device {
 
     private final String password;
 
-    private String assertion;
-
     public Device(final String user, final String deviceId, final String tenant, final String password,
             final OkHttpClient client, final Register register) {
         this.client = client;
@@ -105,13 +101,7 @@ public class Device {
             return;
         }
 
-        final Call call;
-        if (this.assertion != null) {
-            call = this.client.newCall(
-                    this.request.newBuilder().header(HEADER_HONO_DEVICE_REG_ASSERTION, this.assertion).build());
-        } else {
-            call = this.client.newCall(this.request);
-        }
+        final Call call = this.client.newCall(this.request);
 
         SENT.incrementAndGet();
 
@@ -165,12 +155,9 @@ public class Device {
     }
 
     protected void handleSuccess(final Response response) {
-        this.assertion = response.header(HEADER_HONO_DEVICE_REG_ASSERTION);
     }
 
     protected void handleFailure(final Response response) {
-        this.assertion = null;
-
         try {
             switch (response.code()) {
             case 401:
