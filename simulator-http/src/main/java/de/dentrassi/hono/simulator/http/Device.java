@@ -44,6 +44,8 @@ public class Device {
     private static final boolean AUTO_REGISTER = Boolean
             .parseBoolean(System.getenv().getOrDefault("AUTO_REGISTER", "true"));
 
+    private static final boolean NOAUTH = Boolean.parseBoolean(System.getenv().getOrDefault("HTTP_NOAUTH", "false"));
+
     static {
         String url = System.getenv("HONO_HTTP_URL");
 
@@ -98,23 +100,31 @@ public class Device {
     }
 
     private Request createPostRequest() {
-        return new Request.Builder()
+        final Request.Builder builder = new Request.Builder()
                 .url(HONO_HTTP_URL)
-                .post(this.body)
-                .header("Authorization", this.auth)
-                .build();
+                .post(this.body);
+
+        if (!NOAUTH) {
+            builder.header("Authorization", this.auth);
+        }
+
+        return builder.build();
     }
 
     private Request createPutRequest() {
-        return new Request.Builder()
+        final Request.Builder builder = new Request.Builder()
                 .url(
                         HONO_HTTP_URL.newBuilder()
                                 .addPathSegment(this.tenant)
                                 .addPathSegment(this.deviceId)
                                 .build())
-                .put(this.body)
-                .header("Authorization", this.auth)
-                .build();
+                .put(this.body);
+
+        if (!NOAUTH) {
+            builder.header("Authorization", this.auth);
+        }
+
+        return builder.build();
     }
 
     public void register() throws Exception {
@@ -194,7 +204,7 @@ public class Device {
         try {
             switch (code) {
             case 401:
-                if (AUTO_REGISTER) {
+                if (AUTO_REGISTER && shouldRegister()) {
                     register();
                 }
                 break;
