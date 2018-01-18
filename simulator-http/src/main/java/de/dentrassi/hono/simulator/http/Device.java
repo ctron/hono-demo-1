@@ -73,18 +73,38 @@ public class Device {
 
     private final String password;
 
+    private final String tenant;
+
     public Device(final String user, final String deviceId, final String tenant, final String password,
             final OkHttpClient client, final Register register) {
         this.client = client;
         this.register = register;
         this.user = user;
         this.deviceId = deviceId;
+        this.tenant = tenant;
         this.password = password;
         this.auth = Credentials.basic(user + "@" + tenant, password);
         this.body = RequestBody.create(JSON, "{foo: 42}");
-        this.request = new Request.Builder()
+
+        this.request = createPutRequest();
+    }
+
+    private Request createPostRequest() {
+        return new Request.Builder()
                 .url(HONO_HTTP_URL)
                 .post(this.body)
+                .header("Authorization", this.auth)
+                .build();
+    }
+
+    private Request createPutRequest() {
+        return new Request.Builder()
+                .url(
+                        HONO_HTTP_URL.newBuilder()
+                                .addPathSegment(this.tenant)
+                                .addPathSegment(this.deviceId)
+                                .build())
+                .put(this.body)
                 .header("Authorization", this.auth)
                 .build();
     }
@@ -158,6 +178,7 @@ public class Device {
     }
 
     protected void handleFailure(final Response response) {
+        System.out.println(response.code());
         try {
             switch (response.code()) {
             case 401:
