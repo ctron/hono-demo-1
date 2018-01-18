@@ -43,6 +43,7 @@ public class Device {
     private static final boolean AUTO_REGISTER = Boolean
             .parseBoolean(System.getenv().getOrDefault("AUTO_REGISTER", "true"));
 
+    public static final AtomicLong TICKED = new AtomicLong();
     public static final AtomicLong SENT = new AtomicLong();
     public static final AtomicLong SUCCESS = new AtomicLong();
     public static final AtomicLong FAILURE = new AtomicLong();
@@ -99,6 +100,9 @@ public class Device {
     }
 
     private void doPublish() {
+
+        TICKED.incrementAndGet();
+
         if (!this.client.isConnected()) {
             return;
         }
@@ -106,7 +110,7 @@ public class Device {
         SENT.incrementAndGet();
         BACKLOG.incrementAndGet();
 
-        this.client.publish(this.topic, this.payload, MqttQoS.AT_LEAST_ONCE, false, false, published -> {
+        this.client.publish(this.topic, this.payload, MqttQoS.AT_MOST_ONCE, false, false, published -> {
             BACKLOG.decrementAndGet();
             if (published.succeeded()) {
                 SUCCESS.incrementAndGet();
