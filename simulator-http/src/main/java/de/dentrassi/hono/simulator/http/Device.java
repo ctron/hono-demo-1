@@ -36,6 +36,7 @@ public class Device {
     public static final AtomicLong BACKLOG = new AtomicLong();
 
     private static final boolean ASYNC = Boolean.parseBoolean(System.getenv().getOrDefault("HTTP_ASYNC", "false"));
+    private static final String METHOD = System.getenv().get("HTTP_METHOD");
 
     private static final boolean AUTO_REGISTER = Boolean
             .parseBoolean(System.getenv().getOrDefault("AUTO_REGISTER", "true"));
@@ -86,7 +87,11 @@ public class Device {
         this.auth = Credentials.basic(user + "@" + tenant, password);
         this.body = RequestBody.create(JSON, "{foo: 42}");
 
-        this.request = createPutRequest();
+        if ("POST".equals(METHOD)) {
+            this.request = createPostRequest();
+        } else {
+            this.request = createPutRequest();
+        }
     }
 
     private Request createPostRequest() {
