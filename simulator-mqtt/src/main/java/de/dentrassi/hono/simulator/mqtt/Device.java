@@ -2,6 +2,7 @@ package de.dentrassi.hono.simulator.mqtt;
 
 import static de.dentrassi.hono.demo.common.Register.shouldRegister;
 
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
 import de.dentrassi.flow.component.mqtt.internal.io.vertx.mqtt.MqttClient;
@@ -43,6 +44,11 @@ public class Device {
     private static final boolean AUTO_REGISTER = Boolean
             .parseBoolean(System.getenv().getOrDefault("AUTO_REGISTER", "true"));
 
+    private static final long RECONNECT_DELAY = Application.envOrElse("RECONNECT_DELAY", Long::parseLong, 2_000L);
+    private static final int RECONNECT_JITTER = Application.envOrElse("RECONNECT_JITTER", Integer::parseInt, 2_000);
+
+    private final Random random = new Random();
+
     public static final AtomicLong TICKED = new AtomicLong();
     public static final AtomicLong SENT = new AtomicLong();
     public static final AtomicLong CONNECTED = new AtomicLong();
@@ -81,13 +87,27 @@ public class Device {
     }
 
     private void startConnect() {
-        this.client.connect(HONO_MQTT_PORT, HONO_MQTT_HOST, HONO_MQTT_HOST, connected -> {
-            if (connected.failed()) {
-                connectionLost(connected.cause());
-            } else {
-                connectionEstablished();
-            }
+
+        this.vertx.setTimer(getConnectDelay(), v -> {
+
+            this.client.connect(HONO_MQTT_PORT, HONO_MQTT_HOST, HONO_MQTT_HOST, connected -> {
+                if (connected.failed()) {
+                    connectionLost(connected.cause());
+                } else {
+                    connectionEstablished();
+                }
+            });
         });
+
+    }
+
+    private long getConnectDelay() {
+
+        final long delay = RECONNECT_DELAY + this.random.nextInt(RECONNECT_JITTER);
+        if (delay <= 0) {
+            return 1;
+        }
+        return delay;
     }
 
     public void tick() {
@@ -141,6 +161,7 @@ public class Device {
                 throwable.printStackTrace();
             }
         }
+
         startConnect();
     }
 
