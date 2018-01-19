@@ -137,7 +137,9 @@ public class Device {
                 break;
             }
         } else {
-            throwable.printStackTrace();
+            if (throwable != null) {
+                throwable.printStackTrace();
+            }
         }
         startConnect();
     }
