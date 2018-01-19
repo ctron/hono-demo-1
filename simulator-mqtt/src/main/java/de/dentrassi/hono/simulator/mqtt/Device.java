@@ -52,7 +52,7 @@ public class Device {
 
         this.vertx = vertx;
         this.register = register;
-        this.topic = "telementry";
+        this.topic = "telemetry";
 
         this.deviceId = deviceId;
         this.username = username;
