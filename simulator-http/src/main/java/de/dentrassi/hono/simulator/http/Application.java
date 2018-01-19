@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -123,6 +124,8 @@ public class Application {
 
         final ScheduledExecutorService executor = Executors.newScheduledThreadPool(numberOfThreads);
 
+        final Random r = new Random();
+
         try {
 
             for (int i = 0; i < numberOfDevices; i++) {
@@ -131,7 +134,7 @@ public class Application {
                 final String deviceId = String.format("%s-%s", deviceIdPrefix, i);
 
                 final Device device = new Device(username, deviceId, DEFAULT_TENANT, "hono-secret", http, register);
-                executor.scheduleAtFixedRate(device::tick, 1, 1, TimeUnit.SECONDS);
+                executor.scheduleAtFixedRate(device::tick, r.nextInt(1_000), 1_000, TimeUnit.MILLISECONDS);
             }
 
             Thread.sleep(Long.MAX_VALUE);
