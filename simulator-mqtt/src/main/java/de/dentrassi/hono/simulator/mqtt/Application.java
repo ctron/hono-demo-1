@@ -115,9 +115,6 @@ public class Application {
     private static void dumpStats() {
         try {
             final long sent = Device.SENT.getAndSet(0);
-            final long success = Device.SUCCESS.getAndSet(0);
-            final long failure = Device.FAILURE.getAndSet(0);
-            final long backlog = Device.BACKLOG.get();
             final long connected = Device.CONNECTED.get();
 
             final Instant now = Instant.now();
@@ -125,15 +122,12 @@ public class Application {
             if (metrics != null) {
                 final Map<String, Number> values = new HashMap<>(4);
                 values.put("sent", sent);
-                values.put("success", success);
-                values.put("failure", failure);
-                values.put("backlog", backlog);
+                values.put("connected", sent);
                 metrics.updateStats(now, "mqtt-publish", values);
 
             }
 
-            System.out.format("Connected: %8s, Sent: %8s, Success: %8s, Failure: %8s, Backlog: %8s",
-                    connected, sent, success, failure, backlog);
+            System.out.format("Connected: %8s, Sent: %8s", connected, sent);
             System.out.println();
             System.out.flush();
         } catch (final Exception e) {

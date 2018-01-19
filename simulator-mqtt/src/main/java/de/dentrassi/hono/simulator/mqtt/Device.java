@@ -45,9 +45,6 @@ public class Device {
 
     public static final AtomicLong TICKED = new AtomicLong();
     public static final AtomicLong SENT = new AtomicLong();
-    public static final AtomicLong SUCCESS = new AtomicLong();
-    public static final AtomicLong FAILURE = new AtomicLong();
-    public static final AtomicLong BACKLOG = new AtomicLong();
     public static final AtomicLong CONNECTED = new AtomicLong();
 
     public Device(final Vertx vertx, final String username, final String deviceId, final String tenant,
@@ -108,16 +105,8 @@ public class Device {
         }
 
         SENT.incrementAndGet();
-        BACKLOG.incrementAndGet();
 
-        this.client.publish(this.topic, this.payload, MqttQoS.AT_MOST_ONCE, false, false, published -> {
-            BACKLOG.decrementAndGet();
-            if (published.succeeded()) {
-                SUCCESS.incrementAndGet();
-            } else {
-                FAILURE.incrementAndGet();
-            }
-        });
+        this.client.publish(this.topic, this.payload, MqttQoS.AT_MOST_ONCE, false, false);
     }
 
     private void connectionEstablished() {
