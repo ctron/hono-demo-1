@@ -158,6 +158,7 @@ public class Application {
             final long sent = Device.SENT.getAndSet(0);
             final long success = Device.SUCCESS.getAndSet(0);
             final long failure = Device.FAILURE.getAndSet(0);
+            final long durations = Device.DURATIONS.getAndSet(0);
             final long backlog = Device.BACKLOG.get();
 
             final Map<Integer, Long> counts = new TreeMap<>();
@@ -176,6 +177,7 @@ public class Application {
                 values.put("success", success);
                 values.put("failure", failure);
                 values.put("backlog", backlog);
+                values.put("durations", durations);
                 metrics.updateStats(now, "http-publish", values);
 
                 if (!counts.isEmpty()) {
@@ -187,10 +189,11 @@ public class Application {
                 }
             }
 
-            System.out.format("Sent: %10s, Success: %8s, Failure: %8s, Backlog: %8s", sent, success, failure, backlog);
+            System.out.format("Sent: %08s, Success: %8s, Failure: %8s, Backlog: %8s", sent, success, failure, backlog);
             counts.forEach((code, num) -> {
                 System.out.format(", %03d: %8s", code, num);
             });
+            System.out.format(", %10d ms", durations);
             System.out.println();
             System.out.flush();
         } catch (final Exception e) {

@@ -3,6 +3,8 @@ package de.dentrassi.hono.simulator.http;
 import static de.dentrassi.hono.demo.common.Register.shouldRegister;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -36,6 +38,7 @@ public class Device {
     public static final AtomicLong SUCCESS = new AtomicLong();
     public static final AtomicLong FAILURE = new AtomicLong();
     public static final AtomicLong BACKLOG = new AtomicLong();
+    public static final AtomicLong DURATIONS = new AtomicLong();
     public static final Map<Integer, AtomicLong> ERRORS = new ConcurrentHashMap<>();
 
     private static final boolean ASYNC = Boolean.parseBoolean(System.getenv().getOrDefault("HTTP_ASYNC", "false"));
@@ -154,6 +157,8 @@ public class Device {
     private void processTick() {
         SENT.incrementAndGet();
 
+        final Instant start = Instant.now();
+
         try {
             if (ASYNC) {
                 publishAsync();
@@ -164,6 +169,9 @@ public class Device {
         } catch (final Exception e) {
             FAILURE.incrementAndGet();
             logger.debug("Failed to publish", e);
+        } finally {
+            final Duration dur = Duration.between(start, Instant.now());
+            DURATIONS.addAndGet(dur.toMillis());
         }
     }
 
