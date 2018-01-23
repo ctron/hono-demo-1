@@ -178,6 +178,7 @@ public class Application {
                 values.put("failure", failure);
                 values.put("backlog", backlog);
                 values.put("durations", durations);
+                values.put("avgDuration", (double) durations / (double) sent);
                 metrics.updateStats(now, "http-publish", values);
 
                 if (!counts.isEmpty()) {
