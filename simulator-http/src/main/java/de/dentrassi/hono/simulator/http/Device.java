@@ -81,6 +81,8 @@ public class Device {
 
     private final String tenant;
 
+    private final Call call;
+
     public Device(final String user, final String deviceId, final String tenant, final String password,
             final OkHttpClient client, final Register register) {
         this.client = client;
@@ -97,6 +99,8 @@ public class Device {
         } else {
             this.request = createPutRequest();
         }
+
+        this.call = this.client.newCall(this.request);
     }
 
     private Request createPostRequest() {
@@ -148,15 +152,13 @@ public class Device {
     }
 
     private void processTick() {
-        final Call call = this.client.newCall(this.request);
-
         SENT.incrementAndGet();
 
         try {
             if (ASYNC) {
-                publishAsync(call);
+                publishAsync();
             } else {
-                publishSync(call);
+                publishSync();
             }
 
         } catch (final IOException e) {
@@ -165,8 +167,8 @@ public class Device {
         }
     }
 
-    private void publishSync(final Call call) throws IOException {
-        try (final Response response = call.execute()) {
+    private void publishSync() throws IOException {
+        try (final Response response = this.call.execute()) {
             if (response.isSuccessful()) {
                 SUCCESS.incrementAndGet();
                 handleSuccess(response);
@@ -178,9 +180,9 @@ public class Device {
         }
     }
 
-    private void publishAsync(final Call call) {
+    private void publishAsync() {
         BACKLOG.incrementAndGet();
-        call.enqueue(new Callback() {
+        this.call.enqueue(new Callback() {
 
             @Override
             public void onResponse(final Call call, final Response response) throws IOException {
