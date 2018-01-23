@@ -139,57 +139,70 @@ public class Device {
             return;
         }
 
+        try {
+            processTick();
+        } catch (final Exception e) {
+            logger.warn("Failed to tick", e);
+        }
+
+    }
+
+    private void processTick() {
         final Call call = this.client.newCall(this.request);
 
         SENT.incrementAndGet();
 
         try {
             if (ASYNC) {
-
-                BACKLOG.incrementAndGet();
-                call.enqueue(new Callback() {
-
-                    @Override
-                    public void onResponse(final Call call, final Response response) throws IOException {
-                        BACKLOG.decrementAndGet();
-                        if (response.isSuccessful()) {
-                            SUCCESS.incrementAndGet();
-                            handleSuccess(response);
-                        } else {
-                            logger.trace("Result code: {}", response.code());
-                            FAILURE.incrementAndGet();
-                            handleFailure(response);
-                        }
-                        response.close();
-                    }
-
-                    @Override
-                    public void onFailure(final Call call, final IOException e) {
-                        BACKLOG.decrementAndGet();
-                        FAILURE.incrementAndGet();
-                        logger.debug("Failed to tick", e);
-                    }
-                });
-
+                publishAsync(call);
             } else {
-
-                try (final Response response = call.execute()) {
-                    if (response.isSuccessful()) {
-                        SUCCESS.incrementAndGet();
-                        handleSuccess(response);
-                    } else {
-                        logger.trace("Result code: {}", response.code());
-                        FAILURE.incrementAndGet();
-                        handleFailure(response);
-                    }
-                }
+                publishSync(call);
             }
 
         } catch (final IOException e) {
             FAILURE.incrementAndGet();
             logger.debug("Failed to tick", e);
         }
+    }
 
+    private void publishSync(final Call call) throws IOException {
+        try (final Response response = call.execute()) {
+            if (response.isSuccessful()) {
+                SUCCESS.incrementAndGet();
+                handleSuccess(response);
+            } else {
+                logger.trace("Result code: {}", response.code());
+                FAILURE.incrementAndGet();
+                handleFailure(response);
+            }
+        }
+    }
+
+    private void publishAsync(final Call call) {
+        BACKLOG.incrementAndGet();
+        call.enqueue(new Callback() {
+
+            @Override
+            public void onResponse(final Call call, final Response response) throws IOException {
+                BACKLOG.decrementAndGet();
+                if (response.isSuccessful()) {
+                    SUCCESS.incrementAndGet();
+                    handleSuccess(response);
+                } else {
+                    logger.trace("Result code: {}", response.code());
+                    FAILURE.incrementAndGet();
+                    handleFailure(response);
+                }
+                response.close();
+            }
+
+            @Override
+            public void onFailure(final Call call, final IOException e) {
+                BACKLOG.decrementAndGet();
+                FAILURE.incrementAndGet();
+                logger.debug("Failed to tick", e);
+            }
+        });
     }
 
     protected void handleSuccess(final Response response) {
