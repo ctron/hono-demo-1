@@ -84,8 +84,6 @@ public class Device {
 
     private final String tenant;
 
-    private final Call call;
-
     public Device(final String user, final String deviceId, final String tenant, final String password,
             final OkHttpClient client, final Register register) {
         this.client = client;
@@ -102,8 +100,6 @@ public class Device {
         } else {
             this.request = createPutRequest();
         }
-
-        this.call = this.client.newCall(this.request);
     }
 
     private Request createPostRequest() {
@@ -176,7 +172,7 @@ public class Device {
     }
 
     private void publishSync() throws IOException {
-        try (final Response response = this.call.execute()) {
+        try (final Response response = createCall().execute()) {
             if (response.isSuccessful()) {
                 SUCCESS.incrementAndGet();
                 handleSuccess(response);
@@ -190,7 +186,7 @@ public class Device {
 
     private void publishAsync() {
         BACKLOG.incrementAndGet();
-        this.call.enqueue(new Callback() {
+        createCall().enqueue(new Callback() {
 
             @Override
             public void onResponse(final Call call, final Response response) throws IOException {
@@ -213,6 +209,10 @@ public class Device {
                 logger.debug("Failed to tick", e);
             }
         });
+    }
+
+    private Call createCall() {
+        return this.client.newCall(this.request);
     }
 
     protected void handleSuccess(final Response response) {
