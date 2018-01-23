@@ -161,9 +161,9 @@ public class Device {
                 publishSync();
             }
 
-        } catch (final IOException e) {
+        } catch (final Exception e) {
             FAILURE.incrementAndGet();
-            logger.debug("Failed to tick", e);
+            logger.debug("Failed to publish", e);
         }
     }
 
