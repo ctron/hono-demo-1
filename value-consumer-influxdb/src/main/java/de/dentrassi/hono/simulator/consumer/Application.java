@@ -141,8 +141,12 @@ public class Application {
 
         System.out.format("%s: Processed %s messages%n", now, diff);
 
-        if (this.metrics != null) {
-            this.metrics.updateStats(now, "consumer", "messageCount", diff);
+        try {
+            if (this.metrics != null) {
+                this.metrics.updateStats(now, "consumer", "messageCount", diff);
+            }
+        } catch (final Exception e) {
+            e.printStackTrace();
         }
     }
 
