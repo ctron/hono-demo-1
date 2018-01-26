@@ -16,6 +16,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -94,6 +95,8 @@ public class Application {
         options.setEventLoopPoolSize(eventLoopPoolSize);
         final Vertx vertx = Vertx.factory.vertx(options);
 
+        final Random r = new Random();
+
         try {
 
             for (int i = 0; i < numberOfDevices; i++) {
@@ -102,7 +105,8 @@ public class Application {
                 final String deviceId = String.format("%s-%s", deviceIdPrefix, i);
 
                 final Device device = new Device(vertx, username, deviceId, DEFAULT_TENANT, "hono-secret", register);
-                executor.scheduleAtFixedRate(device::tick, 1, 1, TimeUnit.SECONDS);
+
+                executor.scheduleAtFixedRate(device::tick, r.nextInt(1_000), 1_000, TimeUnit.MILLISECONDS);
             }
 
             Thread.sleep(Long.MAX_VALUE);
