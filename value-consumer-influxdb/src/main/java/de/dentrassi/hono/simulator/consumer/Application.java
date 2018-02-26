@@ -19,6 +19,7 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -39,6 +40,7 @@ import de.dentrassi.hono.demo.common.InfluxDbMetrics;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.proton.ProtonClientOptions;
+import io.vertx.proton.ProtonConnection;
 
 public class Application {
 
@@ -55,6 +57,8 @@ public class Application {
     private long last;
     private final AtomicLong counter = new AtomicLong();
 
+    private final ScheduledExecutorService stats;
+
     private static final boolean PERSISTENCE_ENABLED = Optional
             .ofNullable(System.getenv("ENABLE_PERSISTENCE"))
             .map(Boolean::parseBoolean)
@@ -64,6 +68,8 @@ public class Application {
             .ofNullable(System.getenv("ENABLE_METRICS"))
             .map(Boolean::parseBoolean)
             .orElse(true);
+
+    private static final long DEFAULT_CONNECT_TIMEOUT_MILLIS = 5_000;
 
     public static void main(final String[] args) throws Exception {
 
@@ -75,7 +81,21 @@ public class Application {
                 getenv("HONO_PASSWORD"),
                 ofNullable(getenv("HONO_TRUSTED_CERTS")));
 
-        app.consumeTelemetryData();
+        try {
+            app.consumeTelemetryData();
+            System.out.println("Exiting application ...");
+        } finally {
+            app.close();
+        }
+        System.out.println("Bye, bye!");
+
+        Thread.sleep(1_000);
+
+        for (final Thread t : Thread.getAllStackTraces().keySet()) {
+            System.out.println(t.getName());
+        }
+
+        System.exit(-1);
     }
 
     public Application(final String tenant, final String host, final int port, final String user, final String password,
@@ -103,8 +123,8 @@ public class Application {
             this.metrics = null;
         }
 
-        Executors.newSingleThreadScheduledExecutor()
-                .scheduleAtFixedRate(this::updateStats, 1, 1, TimeUnit.SECONDS);
+        this.stats = Executors.newSingleThreadScheduledExecutor();
+        this.stats.scheduleAtFixedRate(this::updateStats, 1, 1, TimeUnit.SECONDS);
 
         this.tenant = tenant;
 
@@ -113,9 +133,12 @@ public class Application {
         final ConnectionFactoryBuilder builder = ConnectionFactoryImpl.ConnectionFactoryBuilder.newBuilder()
                 .vertx(this.vertx)
                 .host(host).port(port)
-                .user(user).password(password)
-                .enableTls()
-                .disableHostnameVerification();
+                .user(user).password(password);
+
+        if (System.getenv("DISABLE_TLS") == null) {
+            builder.enableTls()
+                    .disableHostnameVerification();
+        }
 
         trustedCerts.ifPresent(builder::trustStorePath);
 
@@ -128,7 +151,13 @@ public class Application {
         this.honoClient = new HonoClientImpl(this.vertx, builder.build(), config);
 
         this.latch = new CountDownLatch(1);
+    }
 
+    private void close() {
+        this.stats.shutdown();
+        this.honoClient.shutdown(done -> {
+        });
+        this.vertx.close();
     }
 
     public void updateStats() {
@@ -159,37 +188,49 @@ public class Application {
         return String.format("http://%s:%s", getenv("INFLUXDB_SERVICE_HOST"), getenv("INFLUXDB_SERVICE_PORT_API"));
     }
 
-    private void consumeTelemetryData() throws Exception {
-        final Future<MessageConsumer> consumerFuture = Future.future();
+    private ProtonClientOptions getOptions() {
+        return new ProtonClientOptions();
+    }
 
-        consumerFuture.setHandler(result -> {
-            if (!result.succeeded()) {
-                System.err.println("honoClient could not create telemetry consumer : ");
-                result.cause().printStackTrace();
-            } else {
-                System.out.println("Listening to telemetry …");
+    private void consumeTelemetryData() throws Exception {
+
+        final Future<MessageConsumer> startupTracker = Future.future();
+        startupTracker.setHandler(startup -> {
+            if (startup.failed()) {
+                logger.error("Error occurred during initialization of receiver", startup.cause());
+                this.latch.countDown();
             }
-            this.latch.countDown();
         });
 
-        final Future<HonoClient> connectionTracker = Future.future();
+        this.honoClient
+                .connect(getOptions(), this::onDisconnect)
+                .compose(connectedClient -> createConsumer(connectedClient))
+                .setHandler(startupTracker);
 
-        this.honoClient.connect(new ProtonClientOptions(), connectionTracker.completer());
-
-        connectionTracker.compose(honoClient -> {
-            honoClient.createTelemetryConsumer(this.tenant, msg -> handleTelemetryMessage(msg),
-                    consumerFuture.completer());
-        }, consumerFuture);
+        // if everything went according to plan, the next step will block forever
 
         this.latch.await();
+    }
 
-        if (consumerFuture.succeeded()) {
-            while (true) {
-                Thread.sleep(Long.MAX_VALUE);
-            }
-        }
-        this.vertx.close();
+    private Future<MessageConsumer> createConsumer(final HonoClient connectedClient) {
 
+        // default is telemetry consumer
+        return connectedClient.createTelemetryConsumer(this.tenant,
+                this::handleTelemetryMessage, closeHandler -> {
+                    logger.info("close handler of event consumer is called");
+                    this.vertx.setTimer(DEFAULT_CONNECT_TIMEOUT_MILLIS, reconnect -> {
+                        logger.info("attempting to re-open the EventConsumer link ...");
+                        createConsumer(connectedClient);
+                    });
+                });
+    }
+
+    private void onDisconnect(final ProtonConnection con) {
+        this.vertx.setTimer(DEFAULT_CONNECT_TIMEOUT_MILLIS, reconnect -> {
+            logger.info("attempting to re-connect to Hono ...");
+            this.honoClient.connect(getOptions(), this::onDisconnect)
+                    .compose(connectedClient -> createConsumer(connectedClient));
+        });
     }
 
     private void handleTelemetryMessage(final Message msg) {

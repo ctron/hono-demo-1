@@ -14,7 +14,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <flow.version>0.0.5-SNAPSHOT</flow.version>
+        <flow.version>0.0.8</flow.version>
     </properties>
 
     <dependencies>
@@ -40,6 +40,12 @@
         <dependency>
             <groupId>de.dentrassi.flow</groupId>
             <artifactId>flow-component-kapua</artifactId>
+            <version>${flow.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>de.dentrassi.flow</groupId>
+            <artifactId>flow-model</artifactId>
             <version>${flow.version}</version>
         </dependency>
 

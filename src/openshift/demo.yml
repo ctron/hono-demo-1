@@ -4,12 +4,15 @@ metadata:
   name: hono-demo-1-template
   annotations:
     description: "Eclipse Hono™ Demo #1"
-    iconClass: "pficon-virtual-machine"
+    iconClass: "pficon pficon-virtual-machine"
     tags: "iot"
 
 # Parameters
 
 parameters:
+- name:         GIT_URI
+  description:     URI of the git repository to use
+  value:           https://github.com/ctron/hono-demo-1
 - name:         GIT_BRANCH
   description:     GitHub branch
   value:           master
@@ -46,7 +49,7 @@ objects:
     source: 
       type: Git
       git:
-        uri: https://github.com/ctron/hono-demo-1
+        uri: ${GIT_URI}
         ref: ${GIT_BRANCH}
     strategy: 
       type: Docker
@@ -69,7 +72,7 @@ objects:
     source: 
       type: Git
       git:
-        uri: https://github.com/ctron/hono-demo-1
+        uri: ${GIT_URI}
         ref: ${GIT_BRANCH}
     strategy: 
       type: Docker
@@ -95,7 +98,7 @@ objects:
     source: 
       type: Git
       git:
-        uri: https://github.com/ctron/hono-demo-1
+        uri: ${GIT_URI}
         ref: ${GIT_BRANCH}
     strategy: 
       type: Docker
@@ -205,33 +208,3 @@ objects:
               value: "1"
             - name: NUMBER_OF_PUBLISHERS
               value: "1"
-
-# Open node port
-
-- kind: Service
-  apiVersion: v1
-  metadata:
-    name: router
-    labels:
-      app: enmasse
-  spec:
-    type: NodePort
-    ports:
-    - port: 5672
-      nodePort: 32672
-    selector:
-      name: qrouterd
-
-- kind: Service
-  apiVersion: v1
-  metadata:
-    name: router-tls
-    labels:
-      app: enmasse
-  spec:
-    type: NodePort
-    ports:
-    - port: 5671
-      nodePort: 32671
-    selector:
-      name: qrouterd
