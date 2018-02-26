@@ -16,6 +16,12 @@ parameters:
 - name:         GIT_BRANCH
   description:     GitHub branch
   value:           master
+- name:         ENMASSE_PROJECT
+  description:     The project name of the EnMasse instance
+  value:           enmasse
+- name:         HONO_PROJECT
+  description:     The project name of the Hono instance
+  value:           hono
 
 objects:
 
@@ -157,6 +163,10 @@ objects:
               value: verysecret
             - name: HONO_TENANT
               value: DEFAULT_TENANT
+            - name: MESSAGING_SERVICE_HOST
+              value: messaging.${ENMASSE_PROJECT}.svc
+            - name: MESSAGING_SERVICE_PORT_AMQP
+              value: 5672
 #            - name: HONO_TRUSTED_CERTS
 #              value: /etc/secret-volume/trusted-certs.pem
             - name: INFLUXDB_USER
@@ -165,6 +175,10 @@ objects:
               value: root
             - name: INFLUXDB_NAME
               value: kubecon
+            - name: INFLUXDB_URL
+              value: http://influxdb.${HONO_PROJECT}.svc:8086
+            - name: DISABLE_TLS
+              value: "true"
 #        volumes:
 #          - name: secret-volume
 #            secret:
@@ -208,3 +222,9 @@ objects:
               value: "1"
             - name: NUMBER_OF_PUBLISHERS
               value: "1"
+            - name: HONO_ADAPTER_MQTT_VERTX_SERVICE_HOST
+              value: hono-adapter-mqtt-vertx.${HONO_PROJECT}.svc
+            - name: HONO_ADAPTER_MQTT_VERTX_SERVICE_PORT
+              value: "8883"
+            - name: HONO_SERVICE_DEVICE_REGISTRY_URL
+              value: http://hono-service-device-registry.${HONO_PROJECT}.svc:8080
