@@ -7,15 +7,15 @@ const app = express();
 var port = process.env.PORT || process.env.OPENSHIFT_NODEJS_PORT || 8080,
   ip = process.env.IP || process.env.OPENSHIFT_NODEJS_IP || '0.0.0.0';
 
-var influxdbhost = process.env.INFLUXDB_PORT_8086_TCP_ADDR || 'influxdb-hono.192.168.64.7.nip.io',
-  influxdbport = process.env.INFLUXDB_PORT_8086_TCP_PORT || 80;
+var influxdbhost = process.env.INFLUXDB_PORT_8086_TCP_ADDR || 'influxdb.hono.svc',
+  influxdbport = process.env.INFLUXDB_PORT_8086_TCP_PORT || 8086;
 
 app.use('/gauge', express.static(__dirname + '/../node_modules/gaugeJS/dist/'));
 app.use('/jquery', express.static(__dirname + '/../node_modules/jquery/dist/'));
 
 app.engine('html', require('ejs').renderFile);
 
-const influx = new Influx.InfluxDB('http://' + influxdbhost + ':' + influxdbport + '/kubecon')
+const influx = new Influx.InfluxDB('http://' + influxdbhost + ':' + influxdbport + '/payload')
 
 influx.getDatabaseNames()
   .then(names => { console.log(names) });
