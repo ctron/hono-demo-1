@@ -2,7 +2,10 @@
 
 This setup requires an existing [installation of Minishift](https://docs.openshift.org/latest/minishift/getting-started/installing.html) and follows the installation instructions for Hono on EnMasse using S2I: https://github.com/ctron/hono/tree/feature/support_s2i_05x/openshift
 
-This tutorial will assume that you have a Unix-ish operating system and know how to use `wget`, `tar`, …
+This tutorial will assume that you have a Unix-ish operating system and at least the following command line tools installed:
+
+* minishift, oc
+* curl, wget, jq, bash, tar
 
 ## Create a Minishift instance
 
@@ -27,6 +30,7 @@ wget https://github.com/EnMasseProject/enmasse/releases/download/0.17.0/enmasse-
 tar xzf enmasse-0.17.0.tgz
 cd enmasse-0.17.0
 ./deploy-openshift.sh -n enmasse -m "$(minishift console --url)"
+cd ..
 ~~~
 
 **Note:** After the deployment of EnMasse the system might need a while to download and install container
@@ -69,7 +73,17 @@ oc env -n hono dc/hono-service-device-registry HONO_REGISTRY_SVC_MAX_DEVICES_PER
 **Note:** Please remember that this device registry is held in-memory and flushed to disk using JSON. So
 performance might become an issue with too many devices.
 
-## Install Grafana Dashboard
+## Deploy the demo
+
+Create a new project for the simulator and deploy it:
+
+~~~sh
+oc new-project iot-simulator --display-name='IoT workload simulator'
+oc process -f src/openshift/demo.yml \
+  -p "GIT_BRANCH=develop" | oc create -f -
+~~~
+
+## Install Grafana
 
 Grafana can be deployed in order to watch the metrics of Hono and also see the simulated payload. It can
 be installed by executing the following commands:
@@ -80,12 +94,39 @@ oc process -f https://raw.githubusercontent.com/ctron/hono/feature/support_s2i_0
    -p ADMIN_PASSWORD=admin | oc create -f -
 ~~~
 
-## Deploy the demo
+## Configure Grafana
 
-Create a new project for the simulator and deploy it:
+The following command line requests require the use of the Grafana URL and will use the
+environment variable `GRAFANA_URL` for that. You can set the URL in your local shell using:
 
 ~~~sh
-oc new-project iot-simulator --display-name='IoT workload simulator'
-oc process -f src/openshift/demo.yml | oc create -f - 
+GRAFANA_URL="$(oc -n grafana get route grafana --template='{{ .spec.host }}')"
+echo "http://$GRAFANA_URL"
 ~~~
 
+It is also possible to open the URL with a web browser in order to view dashboards and configurations.
+The credentials for this instance are `admin` / `admin`.
+
+Create two new datasources by executing the following commands:
+
+~~~sh
+curl -X POST -T src/grafana/ds_hono.json -H "content-type: application/json" "http://admin:admin@$GRAFANA_URL/api/datasources"
+curl -X POST -T src/grafana/ds_payload.json -H "content-type: application/json" "http://admin:admin@$GRAFANA_URL/api/datasources"
+
+curl -X POST -T src/grafana/dashboard_hono.json -H "content-type: application/json" "http://admin:admin@$GRAFANA_URL/api/dashboards/db"
+curl -X POST -T src/grafana/dashboard_payload.json -H "content-type: application/json" "http://admin:admin@$GRAFANA_URL/api/dashboards/db"
+~~~
+
+# What now?
+
+Now you have an IoT simulator running, which will stream a data set to the Eclipse Hono instance. The IoT consumer
+will consume the simulated payload and store it in the metrics database of Hono.
+
+## Some dashboards
+
+You can check the following URLs:
+
+<dl>
+<dt>$GRAFANA_URL/dashboard/db/ampds2</dt><dd>This shows the payload as it is stored in the InfluxDB payload instance.</dd>
+<dt>$GRAFANA_URL/dashboard/db/hono</dt><dd>Shows the metrics of the Eclipse Hono instances. Initially this should show a "stunning" 1 message/second throughput.</dd>
+</dl>

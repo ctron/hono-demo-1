@@ -152,10 +152,6 @@ objects:
         - image: hono-demo-1-consumer-influxdb
           imagePullPolicy: Always
           name: consumer-influxdb
-#          volumeMounts:
-#            - name: secret-volume
-#              mountPath: /etc/secret-volume
-#              readOnly: true
           env:
             - name: HONO_USER
               value: consumer@HONO
@@ -166,23 +162,17 @@ objects:
             - name: MESSAGING_SERVICE_HOST
               value: messaging.${ENMASSE_PROJECT}.svc
             - name: MESSAGING_SERVICE_PORT_AMQP
-              value: 5672
-#            - name: HONO_TRUSTED_CERTS
-#              value: /etc/secret-volume/trusted-certs.pem
+              value: "5672"
             - name: INFLUXDB_USER
               value: root
             - name: INFLUXDB_PASSWORD
               value: root
             - name: INFLUXDB_NAME
-              value: kubecon
+              value: payload
             - name: INFLUXDB_URL
               value: http://influxdb.${HONO_PROJECT}.svc:8086
             - name: DISABLE_TLS
               value: "true"
-#        volumes:
-#          - name: secret-volume
-#            secret:
-#              secretName: hono-dispatch-router-conf
 
 - kind: DeploymentConfig
   apiVersion: v1
