@@ -130,3 +130,17 @@ You can check the following URLs:
 <dt>$GRAFANA_URL/dashboard/db/ampds2</dt><dd>This shows the payload as it is stored in the InfluxDB payload instance.</dd>
 <dt>$GRAFANA_URL/dashboard/db/hono</dt><dd>Shows the metrics of the Eclipse Hono instances. Initially this should show a "stunning" 1 message/second throughput.</dd>
 </dl>
+
+## Installing Eclipse Che
+
+You can install Eclipse Che to the setup by executing the following commands:
+
+~~~sh
+DEPLOY_ROOT_URL=https://raw.githubusercontent.com/eclipse/che/6.1.x/dockerfiles/init/modules/openshift/files/scripts/
+curl -fL "$DEPLOY_ROOT_URL/deploy_che.sh" -o get-che.sh
+curl -fL "$DEPLOY_ROOT_URL/che-openshift.yml" -o che-openshift.yml
+curl -fL "$DEPLOY_ROOT_URL/che-config" -o che-config
+export CHE_IMAGE_TAG=6.1.1
+bash ./get-che.sh
+~~~
+
