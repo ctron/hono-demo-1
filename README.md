@@ -144,3 +144,9 @@ export CHE_IMAGE_TAG=6.1.1
 bash ./get-che.sh
 ~~~
 
+After Che is initialized you can import the example project and start working on it:
+
+~~~sh
+CHE_URL="http://$(oc -n eclipse-che get route che --template='{{ .spec.host }}')"
+echo "Open browser at: $CHE_URL/f?url=https://github.com/ctron/hono-demo-1/tree/develop"
+~~~

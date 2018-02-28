@@ -1,0 +1,129 @@
+{
+  "v": "4.0",
+  "name": "hone-demo-1",
+  "workspace": {
+    "defaultEnv": "default",
+    "environments": {
+      "default": {
+        "machines": {
+          "dev-machine": {
+            "attributes": {
+              "memoryLimitBytes": "2147483648"
+            },
+            "servers": {
+              "5000/tcp": {
+                "attributes": {},
+                "port": "5000",
+                "protocol": "http"
+              },
+              "3000/tcp": {
+                "attributes": {},
+                "port": "3000",
+                "protocol": "http"
+              },
+              "9000/tcp": {
+                "attributes": {},
+                "port": "9000",
+                "protocol": "http"
+              },
+              "nodejs": {
+                "attributes": {},
+                "port": "8080",
+                "protocol": "http"
+              }
+            },
+            "volumes": {},
+            "installers": [
+              "org.eclipse.che.exec",
+              "org.eclipse.che.terminal",
+              "org.eclipse.che.ws-agent",
+              "org.eclipse.che.ls.js-ts"
+            ],
+            "env": {}
+          }
+        },
+        "recipe": {
+          "type": "dockerimage",
+          "content": "eclipse/node"
+        }
+      }
+    },
+    "projects": [
+      {
+        "links": [],
+        "name": "demo-gauge",
+        "attributes": {},
+        "type": "typescript",
+        "source": {
+          "parameters": {}
+        },
+        "path": "/hono-demo-1/demo-gauge",
+        "problems": [],
+        "mixins": []
+      },
+      {
+        "links": [],
+        "name": "hono-demo-1",
+        "attributes": {
+          "contribute_to_branch": [
+            "develop"
+          ]
+        },
+        "type": "blank",
+        "source": {
+          "location": "https://github.com/ctron/hono-demo-1.git",
+          "type": "git",
+          "parameters": {
+            "branch": "develop",
+            "keepVcs": "true"
+          }
+        },
+        "path": "/hono-demo-1",
+        "description": "",
+        "problems": [],
+        "mixins": [
+          "pullrequest"
+        ]
+      }
+    ],
+    "name": "hono-demo-1",
+    "commands": [
+      {
+        "commandLine": "cd hono-demo-1/demo-gauge\nnpm start",
+        "name": "buildAndRun",
+        "attributes": {
+          "goal": "Run",
+          "previewUrl": "${server.nodejs}"
+        },
+        "type": "custom"
+      },
+      {
+        "commandLine": "cd hono-demo-1/demo-gauge\nnpm install",
+        "name": "install",
+        "attributes": {
+          "goal": "Build"
+        },
+        "type": "custom"
+      }
+    ],
+    "links": []
+  },
+  "ide": {
+    "onProjectsLoaded": {
+      "actions": [
+        {
+          "properties": {
+            "name": "install"
+          },
+          "id": "runCommand"
+        },
+        {
+          "id": "openFile",
+          "properties": {
+            "file": "/hono-demo-1/demo-gauge/index.ts"
+          }
+        }
+      ]
+    }
+  }
+}
