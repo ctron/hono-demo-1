@@ -15,6 +15,21 @@ First you will need to start up minishift:
 minishift start --cpus 4 --memory 16GB --metrics --disk-size 40GB
 ~~~
 
+## Check out this repository
+
+This readme file will assume that you have cloned (checked out) out the repository and are executing
+commands from inside the working space of your clone. Cloning is as easy as:
+
+~~~sh
+git clone http://github.com/ctron/hono-demo-1
+~~~
+
+Or the following command if you want to check out the `develop` branch instead:
+
+~~~sh
+git clone http://github.com/ctron/hono-demo-1 -b develop
+~~~
+
 ## Install EnMasse
 
 Create a new EnMasse project:
