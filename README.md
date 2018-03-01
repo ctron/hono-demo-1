@@ -12,7 +12,7 @@ This tutorial will assume that you have a Unix-ish operating system and at least
 First you will need to start up minishift:
 
 ~~~sh
-minishift start --cpus 4 --memory 16GB --metrics --disk-size 40GB
+minishift start --cpus 4 --memory 16GB --disk-size 40GB
 ~~~
 
 ## Check out this repository
