@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!--[if lt IE 9]><script type="text/javascript" src="assets/excanvas.compiled.js"></script><![endif]-->
+</head>
+<body>
+
+  <div id="preview" style="height: 95vh;">
+    <canvas id="gauge" style="width: 100%; height: 80%;"></canvas>
+    <div id="preview-textfield" style="text-align: center; font-size: 3em; font-weight: bold; color: black; font-family: 'Amaranth', sans-serif"></div>
+  </div>
+
+<script src="/gauge/gauge.js"></script>
+<script src="/jquery/jquery.min.js"></script>
+
+<script>
+
+    selectGauge = new Gauge(document.getElementById("gauge"));
+    selectGauge.setTextField(document.getElementById("preview-textfield"));
+    selectGauge.animationSpeed = 20;
+    selectGauge.maxValue = 3000;
+    selectGauge.set(0);
+
+    function refreshGauge()
+    {
+        $(function() {
+            $.getJSON(
+            "/power_consumption",
+            function(json){ 
+                // console.log(json)
+                selectGauge.set(json.WHE);
+            });
+        });
+    }
+    setInterval( refreshGauge, 1000 );
+
+</script>
+</body>
+</html>

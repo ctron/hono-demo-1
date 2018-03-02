@@ -32,18 +32,18 @@ public class InfluxDbConsumer {
     private final int batchSize = Integer.parseInt(System.getenv().getOrDefault("INFLUXDB_BATCH_SIZE", "20"));
 
     public InfluxDbConsumer(final String uri, final String username, final String password,
-            final String databaseaName) {
+            final String databaseName) {
 
-        logger.info("InfluxDB - URL: {}", uri);
-        logger.info("           batch size: {}", this.batchSize);
+        logger.info("InfluxDB - payload - URL: {}", uri);
+        logger.info("           payload - batch size: {}", this.batchSize);
 
         this.db = InfluxDBFactory.connect(uri, username, password);
 
-        if (!this.db.databaseExists(databaseaName)) {
-            this.db.createDatabase(databaseaName);
+        if (!this.db.databaseExists(databaseName)) {
+            this.db.createDatabase(databaseName);
         }
 
-        this.db.setDatabase(databaseaName);
+        this.db.setDatabase(databaseName);
 
         this.db.enableBatch(this.batchSize, 1000, TimeUnit.MILLISECONDS);
     }
@@ -84,4 +84,5 @@ public class InfluxDbConsumer {
 
         this.db.write(p.build());
     }
+
 }

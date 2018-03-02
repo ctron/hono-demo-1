@@ -8,10 +8,6 @@
         </encoder>
     </appender>
 
-    <!-- 
-    <logger name="de.dentrassi.flow.component.mqtt.MqttClient" level="INFO"/>
-    -->
-
     <root level="INFO">
         <appender-ref ref="STDOUT" />
     </root>

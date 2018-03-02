@@ -8,7 +8,7 @@
  * Contributors:
  *     Jens Reimann - initial API and implementation
  *******************************************************************************/
-package de.dentrassi.hono.simulator.dataset;
+package de.dentrassi.hono.demo.common;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;

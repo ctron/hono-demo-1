@@ -4,15 +4,24 @@ metadata:
   name: hono-demo-1-template
   annotations:
     description: "Eclipse Hono™ Demo #1"
-    iconClass: "pficon-virtual-machine"
+    iconClass: "pficon pficon-virtual-machine"
     tags: "iot"
 
 # Parameters
 
 parameters:
+- name:         GIT_URI
+  description:     URI of the git repository to use
+  value:           https://github.com/ctron/hono-demo-1
 - name:         GIT_BRANCH
   description:     GitHub branch
   value:           master
+- name:         ENMASSE_PROJECT
+  description:     The project name of the EnMasse instance
+  value:           enmasse
+- name:         HONO_PROJECT
+  description:     The project name of the Hono instance
+  value:           hono
 
 objects:
 
@@ -46,7 +55,7 @@ objects:
     source: 
       type: Git
       git:
-        uri: https://github.com/ctron/hono-demo-1
+        uri: ${GIT_URI}
         ref: ${GIT_BRANCH}
     strategy: 
       type: Docker
@@ -69,7 +78,7 @@ objects:
     source: 
       type: Git
       git:
-        uri: https://github.com/ctron/hono-demo-1
+        uri: ${GIT_URI}
         ref: ${GIT_BRANCH}
     strategy: 
       type: Docker
@@ -95,7 +104,7 @@ objects:
     source: 
       type: Git
       git:
-        uri: https://github.com/ctron/hono-demo-1
+        uri: ${GIT_URI}
         ref: ${GIT_BRANCH}
     strategy: 
       type: Docker
@@ -143,10 +152,6 @@ objects:
         - image: hono-demo-1-consumer-influxdb
           imagePullPolicy: Always
           name: consumer-influxdb
-#          volumeMounts:
-#            - name: secret-volume
-#              mountPath: /etc/secret-volume
-#              readOnly: true
           env:
             - name: HONO_USER
               value: consumer@HONO
@@ -154,18 +159,20 @@ objects:
               value: verysecret
             - name: HONO_TENANT
               value: DEFAULT_TENANT
-#            - name: HONO_TRUSTED_CERTS
-#              value: /etc/secret-volume/trusted-certs.pem
+            - name: MESSAGING_SERVICE_HOST
+              value: messaging.${ENMASSE_PROJECT}.svc
+            - name: MESSAGING_SERVICE_PORT_AMQP
+              value: "5672"
             - name: INFLUXDB_USER
               value: root
             - name: INFLUXDB_PASSWORD
               value: root
             - name: INFLUXDB_NAME
-              value: kubecon
-#        volumes:
-#          - name: secret-volume
-#            secret:
-#              secretName: hono-dispatch-router-conf
+              value: payload
+            - name: INFLUXDB_URL
+              value: http://influxdb.${HONO_PROJECT}.svc:8086
+            - name: DISABLE_TLS
+              value: "true"
 
 - kind: DeploymentConfig
   apiVersion: v1
@@ -205,33 +212,9 @@ objects:
               value: "1"
             - name: NUMBER_OF_PUBLISHERS
               value: "1"
-
-# Open node port
-
-- kind: Service
-  apiVersion: v1
-  metadata:
-    name: router
-    labels:
-      app: enmasse
-  spec:
-    type: NodePort
-    ports:
-    - port: 5672
-      nodePort: 32672
-    selector:
-      name: qrouterd
-
-- kind: Service
-  apiVersion: v1
-  metadata:
-    name: router-tls
-    labels:
-      app: enmasse
-  spec:
-    type: NodePort
-    ports:
-    - port: 5671
-      nodePort: 32671
-    selector:
-      name: qrouterd
+            - name: HONO_ADAPTER_MQTT_VERTX_SERVICE_HOST
+              value: hono-adapter-mqtt-vertx.${HONO_PROJECT}.svc
+            - name: HONO_ADAPTER_MQTT_VERTX_SERVICE_PORT
+              value: "8883"
+            - name: HONO_SERVICE_DEVICE_REGISTRY_URL
+              value: http://hono-service-device-registry.${HONO_PROJECT}.svc:8080
