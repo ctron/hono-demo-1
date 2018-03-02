@@ -13,7 +13,6 @@ package de.dentrassi.hono.simulator.consumer;
 import static io.vertx.core.CompositeFuture.join;
 import static java.lang.Integer.parseInt;
 import static java.lang.System.getenv;
-import static java.util.Collections.singletonMap;
 import static java.util.Optional.ofNullable;
 
 import java.time.Instant;
@@ -33,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.dentrassi.hono.demo.common.InfluxDbMetrics;
+import de.dentrassi.hono.demo.common.Tags;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.proton.ProtonClientOptions;
@@ -171,8 +171,8 @@ public class Application {
 
         try {
             if (this.metrics != null) {
-                this.metrics.updateStats(now, "consumer", "messageCount", singletonMap("type", "telemetry"), n1);
-                this.metrics.updateStats(now, "consumer", "messageCount", singletonMap("type", "events"), n2);
+                this.metrics.updateStats(now, "consumer", "messageCount", Tags.TELEMETRY, n1);
+                this.metrics.updateStats(now, "consumer", "messageCount", Tags.EVENT, n2);
             }
         } catch (final Exception e) {
             e.printStackTrace();
