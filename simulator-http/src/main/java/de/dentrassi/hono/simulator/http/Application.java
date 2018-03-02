@@ -190,9 +190,9 @@ public class Application {
                 }
             }
 
-            System.out.format("Sent: %08s, Success: %8s, Failure: %8s, Backlog: %8s", sent, success, failure, backlog);
+            System.out.format("Sent: %08d, Success: %8d, Failure: %8d, Backlog: %8d", sent, success, failure, backlog);
             counts.forEach((code, num) -> {
-                System.out.format(", %03d: %8s", code, num);
+                System.out.format(", %03d: %8d", code, num);
             });
             System.out.format(", %10d ms", durations);
             System.out.println();
