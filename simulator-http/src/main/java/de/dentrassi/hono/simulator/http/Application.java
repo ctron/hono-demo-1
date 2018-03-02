@@ -172,6 +172,7 @@ public class Application {
 
     private static void dumpStats() {
         dumpStatistics(TELEMETRY_STATS);
+        dumpStatistics(EVENT_STATS);
     }
 
     private static void dumpStatistics(final Statistics statistics) {
