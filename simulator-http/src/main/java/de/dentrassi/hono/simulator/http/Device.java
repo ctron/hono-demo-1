@@ -1,3 +1,13 @@
+/*******************************************************************************
+ * Copyright (c) 2017 Red Hat Inc and others.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ *
+ * Contributors:
+ *     Jens Reimann - initial API and implementation
+ *******************************************************************************/
 package de.dentrassi.hono.simulator.http;
 
 import static de.dentrassi.hono.demo.common.Register.shouldRegister;
@@ -5,9 +15,7 @@ import static de.dentrassi.hono.demo.common.Register.shouldRegister;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,13 +42,6 @@ public class Device {
     private static final String HONO_HTTP_PORT = System.getenv("HONO_HTTP_PORT");
     private static final HttpUrl HONO_HTTP_URL;
 
-    public static final AtomicLong SENT = new AtomicLong();
-    public static final AtomicLong SUCCESS = new AtomicLong();
-    public static final AtomicLong FAILURE = new AtomicLong();
-    public static final AtomicLong BACKLOG = new AtomicLong();
-    public static final AtomicLong DURATIONS = new AtomicLong();
-    public static final Map<Integer, AtomicLong> ERRORS = new ConcurrentHashMap<>();
-
     private static final boolean ASYNC = Boolean.parseBoolean(System.getenv().getOrDefault("HTTP_ASYNC", "false"));
     private static final String METHOD = System.getenv().get("HTTP_METHOD");
 
@@ -58,7 +59,7 @@ public class Device {
         }
 
         if (url != null) {
-            HONO_HTTP_URL = HttpUrl.parse(url).resolve("/telemetry");
+            HONO_HTTP_URL = HttpUrl.parse(url);
         } else {
             HONO_HTTP_URL = null;
         }
@@ -72,7 +73,8 @@ public class Device {
 
     private final RequestBody body;
 
-    private final Request request;
+    private final Request telemetryRequest;
+    private final Request eventRequest;
 
     private final Register register;
 
@@ -84,8 +86,13 @@ public class Device {
 
     private final String tenant;
 
+    private final Statistics telemetryStatistics;
+
+    private final Statistics eventStatistics;
+
     public Device(final String user, final String deviceId, final String tenant, final String password,
-            final OkHttpClient client, final Register register) {
+            final OkHttpClient client, final Register register, final Statistics telemetryStatistics,
+            final Statistics eventStatistics) {
         this.client = client;
         this.register = register;
         this.user = user;
@@ -94,17 +101,26 @@ public class Device {
         this.password = password;
         this.auth = Credentials.basic(user + "@" + tenant, password);
         this.body = RequestBody.create(JSON, "{foo: 42}");
+        this.telemetryStatistics = telemetryStatistics;
+        this.eventStatistics = eventStatistics;
 
         if ("POST".equals(METHOD)) {
-            this.request = createPostRequest();
+            this.telemetryRequest = createPostRequest("/telemetry");
+            this.eventRequest = createPostRequest("/event");
         } else {
-            this.request = createPutRequest();
+            this.telemetryRequest = createPutRequest("/telemetry");
+            this.eventRequest = createPutRequest("/event");
         }
     }
 
-    private Request createPostRequest() {
+    private Request createPostRequest(final String type) {
+
+        if (HONO_HTTP_URL == null) {
+            return null;
+        }
+
         final Request.Builder builder = new Request.Builder()
-                .url(HONO_HTTP_URL)
+                .url(HONO_HTTP_URL.resolve(type))
                 .post(this.body);
 
         if (!NOAUTH) {
@@ -114,10 +130,11 @@ public class Device {
         return builder.build();
     }
 
-    private Request createPutRequest() {
+    private Request createPutRequest(final String type) {
         final Request.Builder builder = new Request.Builder()
                 .url(
                         HONO_HTTP_URL.newBuilder()
+                                .addPathSegment(type)
                                 .addPathSegment(this.tenant)
                                 .addPathSegment(this.deviceId)
                                 .build())
@@ -136,93 +153,103 @@ public class Device {
         }
     }
 
-    public void tick() {
+    public void tickTelemetry() {
+        doTick(this::createTelemetryCall, this.telemetryStatistics);
+    }
 
+    public void tickEvent() {
+        doTick(this::createEventCall, this.eventStatistics);
+    }
+
+    private void doTick(final Supplier<Call> c, final Statistics s) {
         if (HONO_HTTP_URL == null) {
             return;
         }
 
         try {
-            processTick();
+            process(s, c);
         } catch (final Exception e) {
             logger.warn("Failed to tick", e);
         }
 
     }
 
-    private void processTick() {
-        SENT.incrementAndGet();
+    private void process(final Statistics statistics, final Supplier<Call> call) {
+        statistics.sent();
 
         final Instant start = Instant.now();
 
         try {
             if (ASYNC) {
-                publishAsync();
+                publishAsync(statistics, call);
             } else {
-                publishSync();
+                publishSync(statistics, call);
             }
 
         } catch (final Exception e) {
-            FAILURE.incrementAndGet();
+            statistics.failed();
             logger.debug("Failed to publish", e);
         } finally {
             final Duration dur = Duration.between(start, Instant.now());
-            DURATIONS.addAndGet(dur.toMillis());
+            statistics.duration(dur);
         }
     }
 
-    private void publishSync() throws IOException {
-        try (final Response response = createCall().execute()) {
+    private void publishSync(final Statistics statistics, final Supplier<Call> callSupplier) throws IOException {
+        try (final Response response = callSupplier.get().execute()) {
             if (response.isSuccessful()) {
-                SUCCESS.incrementAndGet();
-                handleSuccess(response);
+                statistics.success();
+                handleSuccess(response, statistics);
             } else {
                 logger.trace("Result code: {}", response.code());
-                FAILURE.incrementAndGet();
-                handleFailure(response);
+                statistics.failed();
+                handleFailure(response, statistics);
             }
         }
     }
 
-    private void publishAsync() {
-        BACKLOG.incrementAndGet();
-        createCall().enqueue(new Callback() {
+    private void publishAsync(final Statistics statistics, final Supplier<Call> callSupplier) {
+        statistics.backlog();
+        callSupplier.get().enqueue(new Callback() {
 
             @Override
             public void onResponse(final Call call, final Response response) throws IOException {
-                BACKLOG.decrementAndGet();
+                statistics.backlogSent();
                 if (response.isSuccessful()) {
-                    SUCCESS.incrementAndGet();
-                    handleSuccess(response);
+                    statistics.success();
+                    handleSuccess(response, statistics);
                 } else {
                     logger.trace("Result code: {}", response.code());
-                    FAILURE.incrementAndGet();
-                    handleFailure(response);
+                    statistics.failed();
+                    handleFailure(response, statistics);
                 }
                 response.close();
             }
 
             @Override
             public void onFailure(final Call call, final IOException e) {
-                BACKLOG.decrementAndGet();
-                FAILURE.incrementAndGet();
+                statistics.backlogSent();
+                statistics.failed();
                 logger.debug("Failed to tick", e);
             }
         });
     }
 
-    private Call createCall() {
-        return this.client.newCall(this.request);
+    private Call createTelemetryCall() {
+        return this.client.newCall(this.telemetryRequest);
     }
 
-    protected void handleSuccess(final Response response) {
+    private Call createEventCall() {
+        return this.client.newCall(this.eventRequest);
     }
 
-    protected void handleFailure(final Response response) {
+    protected void handleSuccess(final Response response, final Statistics statistics) {
+    }
+
+    protected void handleFailure(final Response response, final Statistics statistics) {
         final int code = response.code();
 
-        final AtomicLong counter = ERRORS.computeIfAbsent(code, x -> new AtomicLong());
-        counter.incrementAndGet();
+        statistics.error(code);
 
         try {
             switch (code) {

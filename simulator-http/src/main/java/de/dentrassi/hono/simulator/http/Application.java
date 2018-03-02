@@ -49,6 +49,12 @@ public class Application {
 
     private static InfluxDbMetrics metrics;
 
+    private static final Statistics TELEMETRY_STATS = new Statistics();
+    private static final Statistics EVENT_STATS = new Statistics();
+
+    private static final int TELEMETRY_MS = Integer.parseInt(System.getenv().getOrDefault("TELEMETRY_MS", "0"));
+    private static final int EVENT_MS = Integer.parseInt(System.getenv().getOrDefault("EVENT_MS", "0"));
+
     private static final boolean METRICS_ENABLED = Optional
             .ofNullable(System.getenv("ENABLE_METRICS"))
             .map(Boolean::parseBoolean)
@@ -134,8 +140,18 @@ public class Application {
                 final String username = String.format("user-%s-%s", deviceIdPrefix, i);
                 final String deviceId = String.format("%s-%s", deviceIdPrefix, i);
 
-                final Device device = new Device(username, deviceId, DEFAULT_TENANT, "hono-secret", http, register);
-                executor.scheduleAtFixedRate(device::tick, r.nextInt(1_000), 1_000, TimeUnit.MILLISECONDS);
+                final Device device = new Device(username, deviceId, DEFAULT_TENANT, "hono-secret", http, register,
+                        TELEMETRY_STATS, EVENT_STATS);
+
+                if (TELEMETRY_MS > 0) {
+                    executor.scheduleAtFixedRate(device::tickTelemetry, r.nextInt(TELEMETRY_MS), TELEMETRY_MS,
+                            TimeUnit.MILLISECONDS);
+                }
+
+                if (EVENT_MS > 0) {
+                    executor.scheduleAtFixedRate(device::tickEvent, r.nextInt(EVENT_MS), EVENT_MS,
+                            TimeUnit.MILLISECONDS);
+                }
             }
 
             Thread.sleep(Long.MAX_VALUE);
@@ -155,16 +171,20 @@ public class Application {
     }
 
     private static void dumpStats() {
+        dumpStatistics(TELEMETRY_STATS);
+    }
+
+    private static void dumpStatistics(final Statistics statistics) {
         try {
-            final long sent = Device.SENT.getAndSet(0);
-            final long success = Device.SUCCESS.getAndSet(0);
-            final long failure = Device.FAILURE.getAndSet(0);
-            final long durations = Device.DURATIONS.getAndSet(0);
-            final long backlog = Device.BACKLOG.get();
+            final long sent = statistics.getSent().getAndSet(0);
+            final long success = statistics.getSuccess().getAndSet(0);
+            final long failure = statistics.getFailure().getAndSet(0);
+            final long durations = statistics.getDurations().getAndSet(0);
+            final long backlog = statistics.getBacklog().get();
 
             final Map<Integer, Long> counts = new TreeMap<>();
 
-            for (final Map.Entry<Integer, AtomicLong> entry : Device.ERRORS.entrySet()) {
+            for (final Map.Entry<Integer, AtomicLong> entry : statistics.getErrors().entrySet()) {
                 final int code = entry.getKey();
                 final long value = entry.getValue().getAndSet(0);
                 counts.put(code, value);
