@@ -1,231 +1,270 @@
 {
   "dashboard": {
-      "annotations": {
-        "list": []
-      },
-      "description": "The Almanac of Minutely Power dataset (Version 2)",
-      "editable": true,
-      "gnetId": null,
-      "graphTooltip": 0,
-      "hideControls": false,
-      "id": null,
-      "links": [],
-      "refresh": "5s",
-      "rows": [
-        {
-          "collapse": false,
-          "height": 250,
-          "panels": [
-            {
-              "aliasColors": {},
-              "bars": false,
-              "datasource": "hono_payload",
-              "description": "Makonin, S. et al. Electricity, water, and natural gas consumption of a residential house in Canada from 2012 to 2014. Sci. Data 3:160037 doi: 10.1038/sdata.2016.37 (2016).",
-              "fill": 1,
-              "id": 1,
-              "legend": {
-                "alignAsTable": false,
-                "avg": false,
-                "current": false,
-                "max": false,
-                "min": false,
-                "rightSide": false,
-                "show": true,
-                "total": false,
-                "values": false
-              },
-              "lines": true,
-              "linewidth": 1,
-              "links": [
-                {
-                  "title": "AMPds2: The Almanac of Minutely Power dataset (Version 2)",
-                  "type": "absolute",
-                  "url": "http://dx.doi.org/10.7910/DVN/FIE0S4"
-                }
-              ],
-              "nullPointMode": "null",
-              "percentage": false,
-              "pointradius": 5,
-              "points": false,
-              "renderer": "flot",
-              "seriesOverrides": [
-                {}
-              ],
-              "span": 12,
-              "stack": false,
-              "steppedLine": false,
-              "targets": [
-                {
-                  "dsType": "influxdb",
-                  "groupBy": [
+    "annotations": {
+      "list": []
+    },
+    "description": "The Almanac of Minutely Power dataset (Version 2)",
+    "editable": true,
+    "gnetId": null,
+    "graphTooltip": 0,
+    "hideControls": false,
+    "id": null,
+    "links": [],
+    "refresh": false,
+    "rows": [
+      {
+        "collapse": false,
+        "height": 250,
+        "panels": [
+          {
+            "aliasColors": {},
+            "bars": false,
+            "dashLength": 10,
+            "dashes": false,
+            "datasource": "hono_payload",
+            "description": "Makonin, S. et al. Electricity, water, and natural gas consumption of a residential house in Canada from 2012 to 2014. Sci. Data 3:160037 doi: 10.1038/sdata.2016.37 (2016).",
+            "fill": 1,
+            "id": 2,
+            "legend": {
+              "alignAsTable": false,
+              "avg": false,
+              "current": false,
+              "max": false,
+              "min": false,
+              "rightSide": false,
+              "show": true,
+              "total": false,
+              "values": false
+            },
+            "lines": true,
+            "linewidth": 1,
+            "links": [
+              {
+                "title": "AMPds2: The Almanac of Minutely Power dataset (Version 2)",
+                "type": "absolute",
+                "url": "http://dx.doi.org/10.7910/DVN/FIE0S4"
+              }
+            ],
+            "nullPointMode": "null",
+            "percentage": false,
+            "pointradius": 5,
+            "points": false,
+            "renderer": "flot",
+            "seriesOverrides": [
+              {
+                "alias": "count",
+                "color": "#508642",
+                "fill": 5,
+                "linewidth": 0,
+                "steppedLine": true,
+                "yaxis": 2,
+                "zindex": -3
+              }
+            ],
+            "spaceLength": 10,
+            "span": 12,
+            "stack": false,
+            "steppedLine": false,
+            "targets": [
+              {
+                "dsType": "influxdb",
+                "groupBy": [
+                  {
+                    "params": [
+                      "1m"
+                    ],
+                    "type": "time"
+                  },
+                  {
+                    "params": [
+                      "null"
+                    ],
+                    "type": "fill"
+                  }
+                ],
+                "measurement": "P",
+                "orderByTime": "ASC",
+                "policy": "autogen",
+                "refId": "A",
+                "resultFormat": "time_series",
+                "select": [
+                  [
                     {
                       "params": [
-                        "$__interval"
+                        "*"
                       ],
-                      "type": "time"
+                      "type": "field"
                     },
                     {
-                      "params": [
-                        "linear"
-                      ],
-                      "type": "fill"
-                    }
-                  ],
-                  "measurement": "P",
-                  "policy": "autogen",
-                  "refId": "A",
-                  "resultFormat": "time_series",
-                  "select": [
-                    [
-                      {
-                        "params": [
-                          "*"
-                        ],
-                        "type": "field"
-                      },
-                      {
-                        "params": [],
-                        "type": "mean"
-                      }
-                    ]
-                  ],
-                  "tags": [
-                    {
-                      "key": "device_id",
-                      "operator": "=~",
-                      "value": "/^$device_id$/"
-                    },
-                    {
-                      "condition": "AND",
-                      "key": "tenant_id",
-                      "operator": "=~",
-                      "value": "/^$tenant$/"
+                      "params": [],
+                      "type": "mean"
                     }
                   ]
-                }
-              ],
-              "thresholds": [],
-              "timeFrom": null,
-              "timeShift": null,
-              "title": "Real Power Measurements From All Meters",
-              "tooltip": {
-                "shared": true,
-                "sort": 0,
-                "value_type": "individual"
+                ],
+                "tags": []
               },
-              "type": "graph",
-              "xaxis": {
-                "mode": "time",
-                "name": null,
-                "show": true,
-                "values": []
+              {
+                "alias": "count",
+                "dsType": "influxdb",
+                "groupBy": [
+                  {
+                    "params": [
+                      "1m"
+                    ],
+                    "type": "time"
+                  },
+                  {
+                    "params": [
+                      "null"
+                    ],
+                    "type": "fill"
+                  }
+                ],
+                "measurement": "P",
+                "orderByTime": "ASC",
+                "policy": "autogen",
+                "refId": "B",
+                "resultFormat": "time_series",
+                "select": [
+                  [
+                    {
+                      "params": [
+                        "B1E"
+                      ],
+                      "type": "field"
+                    },
+                    {
+                      "params": [],
+                      "type": "count"
+                    }
+                  ]
+                ],
+                "tags": []
+              }
+            ],
+            "thresholds": [],
+            "timeFrom": null,
+            "timeShift": null,
+            "title": "Real Power Measurements From All Meters (Tenant: $tenant, device: $device_id)",
+            "tooltip": {
+              "shared": true,
+              "sort": 0,
+              "value_type": "individual"
+            },
+            "type": "graph",
+            "xaxis": {
+              "buckets": null,
+              "mode": "time",
+              "name": null,
+              "show": true,
+              "values": []
+            },
+            "yaxes": [
+              {
+                "format": "short",
+                "label": "",
+                "logBase": 1,
+                "max": null,
+                "min": "0",
+                "show": true
               },
-              "yaxes": [
-                {
-                  "format": "short",
-                  "label": null,
-                  "logBase": 1,
-                  "max": null,
-                  "min": null,
-                  "show": true
-                },
-                {
-                  "format": "short",
-                  "label": null,
-                  "logBase": 1,
-                  "max": null,
-                  "min": null,
-                  "show": true
-                }
-              ]
-            }
-          ],
-          "repeat": null,
-          "repeatIteration": null,
-          "repeatRowId": null,
-          "showTitle": false,
-          "title": "Dashboard Row",
-          "titleSize": "h6"
-        }
-      ],
-      "schemaVersion": 14,
-      "style": "dark",
-      "tags": [],
-      "templating": {
-        "list": [
-          {
-            "allValue": null,
-            "current": {},
-            "datasource": "hono_payload",
-            "hide": 0,
-            "includeAll": true,
-            "label": null,
-            "multi": false,
-            "name": "tenant",
-            "options": [],
-            "query": "SHOW TAG VALUES WITH KEY = \"tenant_id\"",
-            "refresh": 1,
-            "regex": "",
-            "sort": 1,
-            "tagValuesQuery": "",
-            "tags": [],
-            "tagsQuery": "",
-            "type": "query",
-            "useTags": false
-          },
-          {
-            "allValue": null,
-            "current": {},
-            "datasource": "hono_payload",
-            "hide": 0,
-            "includeAll": true,
-            "label": null,
-            "multi": false,
-            "name": "device_id",
-            "options": [],
-            "query": "SHOW TAG VALUES WITH KEY =\"device_id\"",
-            "refresh": 1,
-            "regex": "",
-            "sort": 0,
-            "tagValuesQuery": "",
-            "tags": [],
-            "tagsQuery": "",
-            "type": "query",
-            "useTags": false
+              {
+                "format": "opm",
+                "label": "# messages",
+                "logBase": 1,
+                "max": null,
+                "min": "0",
+                "show": true
+              }
+            ]
           }
-        ]
-      },
-      "time": {
-        "from": "now/d",
-        "to": "now/d"
-      },
-      "timepicker": {
-        "refresh_intervals": [
-          "5s",
-          "10s",
-          "30s",
-          "1m",
-          "5m",
-          "15m",
-          "30m",
-          "1h",
-          "2h",
-          "1d"
         ],
-        "time_options": [
-          "5m",
-          "15m",
-          "1h",
-          "6h",
-          "12h",
-          "24h",
-          "2d",
-          "7d",
-          "30d"
-        ]
-      },
-      "timezone": "browser",
-      "title": "AMPds2",
-      "version": 1
+        "repeat": null,
+        "repeatIteration": null,
+        "repeatRowId": null,
+        "showTitle": false,
+        "title": "Dashboard Row",
+        "titleSize": "h6"
+      }
+    ],
+    "schemaVersion": 14,
+    "style": "dark",
+    "tags": [],
+    "templating": {
+      "list": [
+        {
+          "allValue": null,
+          "current": {},
+          "datasource": "hono_payload",
+          "hide": 0,
+          "includeAll": true,
+          "label": null,
+          "multi": false,
+          "name": "tenant",
+          "options": [],
+          "query": "SHOW TAG VALUES WITH KEY = \"tenant_id\"",
+          "refresh": 1,
+          "regex": "",
+          "sort": 1,
+          "tagValuesQuery": "",
+          "tags": [],
+          "tagsQuery": "",
+          "type": "query",
+          "useTags": false
+        },
+        {
+          "allValue": null,
+          "current": {},
+          "datasource": "hono_payload",
+          "hide": 0,
+          "includeAll": true,
+          "label": null,
+          "multi": false,
+          "name": "device_id",
+          "options": [],
+          "query": "SHOW TAG VALUES WITH KEY =\"device_id\"",
+          "refresh": 1,
+          "regex": "",
+          "sort": 0,
+          "tagValuesQuery": "",
+          "tags": [],
+          "tagsQuery": "",
+          "type": "query",
+          "useTags": false
+        }
+      ]
+    },
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "timepicker": {
+      "refresh_intervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ],
+      "time_options": [
+        "5m",
+        "15m",
+        "1h",
+        "6h",
+        "12h",
+        "24h",
+        "2d",
+        "7d",
+        "30d"
+      ]
+    },
+    "timezone": "browser",
+    "title": "AMPds2",
+    "version": 0
   }
 }
