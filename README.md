@@ -94,8 +94,7 @@ Create a new project for the simulator and deploy it:
 
 ~~~sh
 oc new-project iot-simulator --display-name='IoT workload simulator'
-oc process -f src/openshift/demo.yml \
-  -p "GIT_BRANCH=develop" | oc create -f -
+oc process -f src/openshift/demo.yml | oc create -f -
 ~~~
 
 ## Install Grafana
@@ -163,7 +162,7 @@ After Che is initialized you can import the example project and start working on
 
 ~~~sh
 CHE_URL="http://$(oc -n eclipse-che get route che --template='{{ .spec.host }}')"
-echo "Open browser at: $CHE_URL/f?url=https://github.com/ctron/hono-demo-1/tree/develop"
+echo "Open browser at: $CHE_URL/f?url=https://github.com/ctron/hono-demo-1"
 ~~~
 
 ### Make changes & run
@@ -180,6 +179,6 @@ the following commands:
 
 ~~~sh
 oc new-project demo-gauge
-oc new-app https://github.com/ctron/hono-demo-1#develop --context-dir=demo-gauge
+oc new-app https://github.com/ctron/hono-demo-1 --context-dir=demo-gauge
 oc expose svc/hono-demo-1
 ~~~
