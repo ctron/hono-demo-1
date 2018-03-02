@@ -108,8 +108,8 @@ public class Device {
             this.telemetryRequest = createPostRequest("/telemetry");
             this.eventRequest = createPostRequest("/event");
         } else {
-            this.telemetryRequest = createPutRequest("/telemetry");
-            this.eventRequest = createPutRequest("/event");
+            this.telemetryRequest = createPutRequest("telemetry");
+            this.eventRequest = createPutRequest("event");
         }
     }
 
