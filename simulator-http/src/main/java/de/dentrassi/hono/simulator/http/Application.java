@@ -10,6 +10,7 @@
  *******************************************************************************/
 package de.dentrassi.hono.simulator.http;
 
+import static de.dentrassi.hono.demo.common.Tags.EVENT;
 import static de.dentrassi.hono.demo.common.Tags.TELEMETRY;
 import static java.lang.System.getenv;
 
@@ -171,11 +172,11 @@ public class Application {
     }
 
     private static void dumpStats() {
-        dumpStatistics(TELEMETRY_STATS);
-        dumpStatistics(EVENT_STATS);
+        dumpStatistics("Telemetry", TELEMETRY, TELEMETRY_STATS);
+        dumpStatistics("    Event", EVENT, EVENT_STATS);
     }
 
-    private static void dumpStatistics(final Statistics statistics) {
+    private static void dumpStatistics(final String name, final Map<String, String> tags, final Statistics statistics) {
         try {
             final long sent = statistics.getSent().getAndSet(0);
             final long success = statistics.getSuccess().getAndSet(0);
@@ -201,18 +202,19 @@ public class Application {
                 values.put("backlog", backlog);
                 values.put("durations", durations);
                 values.put("avgDuration", (double) durations / (double) sent);
-                metrics.updateStats(now, "http-publish", values, TELEMETRY);
+                metrics.updateStats(now, "http-publish", values, tags);
 
                 if (!counts.isEmpty()) {
                     final Map<String, Number> errors = new HashMap<>();
                     counts.forEach((code, num) -> {
                         errors.put("" + code, num);
                     });
-                    metrics.updateStats(now, "http-errors", errors, TELEMETRY);
+                    metrics.updateStats(now, "http-errors", errors, tags);
                 }
             }
 
-            System.out.format("Sent: %8d, Success: %8d, Failure: %8d, Backlog: %8d", sent, success, failure, backlog);
+            System.out.format("%s - Sent: %8d, Success: %8d, Failure: %8d, Backlog: %8d", name, sent, success, failure,
+                    backlog);
             counts.forEach((code, num) -> {
                 System.out.format(", %03d: %8d", code, num);
             });
