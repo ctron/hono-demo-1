@@ -10,6 +10,7 @@
  *******************************************************************************/
 package de.dentrassi.hono.simulator.mqtt;
 
+import static de.dentrassi.hono.demo.common.Tags.TELEMETRY;
 import static java.lang.System.getenv;
 
 import java.time.Instant;
@@ -127,7 +128,7 @@ public class Application {
                 final Map<String, Number> values = new HashMap<>(4);
                 values.put("sent", sent);
                 values.put("connected", sent);
-                metrics.updateStats(now, "mqtt-publish", values);
+                metrics.updateStats(now, "mqtt-publish", values, TELEMETRY);
 
             }
 

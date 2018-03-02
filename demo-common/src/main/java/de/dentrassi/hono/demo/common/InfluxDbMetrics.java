@@ -10,6 +10,7 @@
  *******************************************************************************/
 package de.dentrassi.hono.demo.common;
 
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 
 import java.time.Instant;
@@ -55,10 +56,16 @@ public class InfluxDbMetrics {
     }
 
     public void updateStats(final Instant timestamp, final String measurement, final String name, final Number value) {
-        updateStats(timestamp, measurement, singletonMap(name, value));
+        updateStats(timestamp, measurement, singletonMap(name, value), emptyMap());
     }
 
-    public void updateStats(final Instant timestamp, final String measurement, final Map<String, Number> values) {
+    public void updateStats(final Instant timestamp, final String measurement, final String name,
+            final Map<String, String> tags, final Number value) {
+        updateStats(timestamp, measurement, singletonMap(name, value), tags);
+    }
+
+    public void updateStats(final Instant timestamp, final String measurement, final Map<String, Number> values,
+            final Map<String, String> tags) {
 
         final Point.Builder p = Point.measurement(measurement)
                 .time(timestamp.toEpochMilli(), TimeUnit.MILLISECONDS);
@@ -68,6 +75,7 @@ public class InfluxDbMetrics {
         }
 
         p.tag("host", HOSTNAME);
+        tags.forEach(p::tag);
 
         this.db.write(p.build());
     }

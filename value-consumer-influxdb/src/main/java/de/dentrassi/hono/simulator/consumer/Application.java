@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017 Red Hat Inc and others.
+ * Copyright (c) 2017, 2018 Red Hat Inc and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,23 +10,19 @@
  *******************************************************************************/
 package de.dentrassi.hono.simulator.consumer;
 
+import static io.vertx.core.CompositeFuture.join;
 import static java.lang.Integer.parseInt;
 import static java.lang.System.getenv;
+import static java.util.Collections.singletonMap;
 import static java.util.Optional.ofNullable;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.qpid.proton.amqp.messaging.AmqpValue;
-import org.apache.qpid.proton.amqp.messaging.Data;
-import org.apache.qpid.proton.amqp.messaging.Section;
-import org.apache.qpid.proton.message.Message;
 import org.eclipse.hono.client.HonoClient;
 import org.eclipse.hono.client.MessageConsumer;
 import org.eclipse.hono.client.impl.HonoClientImpl;
@@ -54,10 +50,11 @@ public class Application {
     private final InfluxDbConsumer consumer;
     private final InfluxDbMetrics metrics;
 
-    private long last;
-    private final AtomicLong counter = new AtomicLong();
-
     private final ScheduledExecutorService stats;
+
+    private final Consumer telemetryConsumer;
+
+    private final Consumer eventConsumer;
 
     private static final boolean PERSISTENCE_ENABLED = Optional
             .ofNullable(System.getenv("ENABLE_PERSISTENCE"))
@@ -151,6 +148,9 @@ public class Application {
         this.honoClient = new HonoClientImpl(this.vertx, builder.build(), config);
 
         this.latch = new CountDownLatch(1);
+
+        this.telemetryConsumer = new Consumer(this.consumer);
+        this.eventConsumer = new Consumer(this.consumer);
     }
 
     private void close() {
@@ -161,18 +161,18 @@ public class Application {
     }
 
     public void updateStats() {
-        final long c = this.counter.get();
-
-        final long diff = c - this.last;
-        this.last = c;
 
         final Instant now = Instant.now();
 
-        System.out.format("%s: Processed %s messages%n", now, diff);
+        final long n1 = this.telemetryConsumer.getCounter().getAndSet(0);
+        final long n2 = this.eventConsumer.getCounter().getAndSet(0);
+
+        System.out.format("%s: Processed %s telemetry, %s events%n", now, n1, n2);
 
         try {
             if (this.metrics != null) {
-                this.metrics.updateStats(now, "consumer", "messageCount", diff);
+                this.metrics.updateStats(now, "consumer", "messageCount", singletonMap("type", "telemetry"), n1);
+                this.metrics.updateStats(now, "consumer", "messageCount", singletonMap("type", "events"), n2);
             }
         } catch (final Exception e) {
             e.printStackTrace();
@@ -193,34 +193,39 @@ public class Application {
     }
 
     private void consumeTelemetryData() throws Exception {
-
-        final Future<MessageConsumer> startupTracker = Future.future();
-        startupTracker.setHandler(startup -> {
-            if (startup.failed()) {
-                logger.error("Error occurred during initialization of receiver", startup.cause());
-                this.latch.countDown();
-            }
-        });
-
-        this.honoClient
-                .connect(getOptions(), this::onDisconnect)
-                .compose(connectedClient -> createConsumer(connectedClient))
-                .setHandler(startupTracker);
+        connect()
+                .setHandler(startup -> {
+                    if (startup.failed()) {
+                        logger.error("Error occurred during initialization of receiver", startup.cause());
+                        this.latch.countDown();
+                    }
+                });
 
         // if everything went according to plan, the next step will block forever
 
         this.latch.await();
     }
 
-    private Future<MessageConsumer> createConsumer(final HonoClient connectedClient) {
+    private Future<MessageConsumer> createTelemetryConsumer(final HonoClient connectedClient) {
 
-        // default is telemetry consumer
         return connectedClient.createTelemetryConsumer(this.tenant,
-                this::handleTelemetryMessage, closeHandler -> {
+                this.telemetryConsumer::handleMessage, closeHandler -> {
+                    logger.info("close handler of telemetry consumer is called");
+                    this.vertx.setTimer(DEFAULT_CONNECT_TIMEOUT_MILLIS, reconnect -> {
+                        logger.info("attempting to re-open the TelemetryConsumer link ...");
+                        createTelemetryConsumer(connectedClient);
+                    });
+                });
+    }
+
+    private Future<MessageConsumer> createEventConsumer(final HonoClient connectedClient) {
+
+        return connectedClient.createEventConsumer(this.tenant,
+                this.eventConsumer::handleMessage, closeHandler -> {
                     logger.info("close handler of event consumer is called");
                     this.vertx.setTimer(DEFAULT_CONNECT_TIMEOUT_MILLIS, reconnect -> {
                         logger.info("attempting to re-open the EventConsumer link ...");
-                        createConsumer(connectedClient);
+                        createEventConsumer(connectedClient);
                     });
                 });
     }
@@ -228,49 +233,22 @@ public class Application {
     private void onDisconnect(final ProtonConnection con) {
         this.vertx.setTimer(DEFAULT_CONNECT_TIMEOUT_MILLIS, reconnect -> {
             logger.info("attempting to re-connect to Hono ...");
-            this.honoClient.connect(getOptions(), this::onDisconnect)
-                    .compose(connectedClient -> createConsumer(connectedClient));
+            connect();
         });
     }
 
-    private void handleTelemetryMessage(final Message msg) {
-        this.counter.incrementAndGet();
+    private Future<?> connect() {
 
-        if (this.consumer != null) {
-            final String body = bodyAsString(msg);
-            if (body != null) {
-                this.consumer.consume(msg, body);
-            }
-        }
-    }
+        return this.honoClient.connect(
+                getOptions(),
+                this::onDisconnect)
 
-    private String bodyAsString(final Message msg) {
+                .compose(connectedClient -> {
+                    return join(
+                            createTelemetryConsumer(connectedClient),
+                            createEventConsumer(connectedClient));
+                });
 
-        final Section body = msg.getBody();
-
-        if (body instanceof AmqpValue) {
-
-            final Object value = ((AmqpValue) body).getValue();
-
-            if (value == null) {
-                logger.info("Missing body value");
-                return null;
-            }
-
-            if (value instanceof String) {
-                return (String) value;
-            } else if (value instanceof byte[]) {
-                return new String((byte[]) value, StandardCharsets.UTF_8);
-            } else {
-                logger.info("Unsupported body type: {}", value.getClass());
-                return null;
-            }
-        } else if (body instanceof Data) {
-            return StandardCharsets.UTF_8.decode(((Data) body).getValue().asByteBuffer()).toString();
-        } else {
-            logger.info("Unsupported body type: {}", body.getClass());
-            return null;
-        }
     }
 
 }

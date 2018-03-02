@@ -10,6 +10,7 @@
  *******************************************************************************/
 package de.dentrassi.hono.simulator.http;
 
+import static de.dentrassi.hono.demo.common.Tags.TELEMETRY;
 import static java.lang.System.getenv;
 
 import java.lang.management.ManagementFactory;
@@ -179,14 +180,14 @@ public class Application {
                 values.put("backlog", backlog);
                 values.put("durations", durations);
                 values.put("avgDuration", (double) durations / (double) sent);
-                metrics.updateStats(now, "http-publish", values);
+                metrics.updateStats(now, "http-publish", values, TELEMETRY);
 
                 if (!counts.isEmpty()) {
                     final Map<String, Number> errors = new HashMap<>();
                     counts.forEach((code, num) -> {
                         errors.put("" + code, num);
                     });
-                    metrics.updateStats(now, "http-errors", errors);
+                    metrics.updateStats(now, "http-errors", errors, TELEMETRY);
                 }
             }
 
