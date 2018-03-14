@@ -5,12 +5,12 @@ import static de.dentrassi.hono.demo.common.Register.shouldRegister;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
-import de.dentrassi.flow.component.mqtt.internal.io.vertx.mqtt.MqttClient;
 import de.dentrassi.hono.demo.common.Register;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.mqtt.MqttClient;
 import io.vertx.mqtt.MqttClientOptions;
 import io.vertx.mqtt.MqttConnectionException;
 
